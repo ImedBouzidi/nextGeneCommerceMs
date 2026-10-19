@@ -1,0 +1,23 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+server:
+  address: 0.0.0.0
+
+eureka:
+  instance:
+    hostname: eureka-server
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+
