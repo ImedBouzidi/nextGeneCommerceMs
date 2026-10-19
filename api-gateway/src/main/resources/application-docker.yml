@@ -27,6 +27,22 @@ spring:
                 regexp: "/product/(?<path>.*)"
                 replacement: "/${path}"
 
+        # Recommender service (Flask on port 5000) - static route since it's not a Eureka client
+        - id: recommender-service
+          uri: http://recommender-service:5000
+          predicates:
+            - Path=/recommendation/**
+          filters:
+            - StripPrefix=1
+
+        # Customer segmentation service (Flask on port 5000) - static route since it's not a Eureka client
+        - id: customer-segmentation-service
+          uri: http://customer-segmentation-service:5000
+          predicates:
+            - Path=/segmentation/**
+          filters:
+            - StripPrefix=1
+
 eureka:
   client:
     register-with-eureka: true

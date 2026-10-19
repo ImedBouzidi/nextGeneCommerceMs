@@ -57,9 +57,11 @@
                  customers here hold, and the only ones a local facilitator can
                  actually process. -->
             <div class="pay-options">
-              <label class="pay-option" [class.active]="paymentMethod === 'COD'">
+              <label class="pay-option" [class.active]="paymentMethod === 'COD'"
+                     [class.has-popup]="false"
+                     (click)="onPaymentOptionClick('COD')">
                 <input type="radio" name="paymentMethod" value="COD" [(ngModel)]="paymentMethod"
-                       (ngModelChange)="onPaymentMethodChange()">
+                       (click)="$event.stopPropagation()">
                 <i class="fa-solid fa-money-bill-wave"></i>
                 <span>
                   <strong>Cash on delivery</strong>
@@ -67,9 +69,11 @@
                 </span>
               </label>
 
-              <label class="pay-option" [class.active]="paymentMethod === 'EDINAR'">
+              <label class="pay-option" [class.active]="paymentMethod === 'EDINAR'"
+                     [class.has-popup]="true"
+                     (click)="onPaymentOptionClick('EDINAR')">
                 <input type="radio" name="paymentMethod" value="EDINAR" [(ngModel)]="paymentMethod"
-                       (ngModelChange)="onPaymentMethodChange()">
+                       (click)="$event.stopPropagation()">
                 <i class="fa-solid fa-envelope-open-text"></i>
                 <span>
                   <strong>e-Dinar</strong>
@@ -77,9 +81,11 @@
                 </span>
               </label>
 
-              <label class="pay-option" [class.active]="paymentMethod === 'D17'">
+              <label class="pay-option" [class.active]="paymentMethod === 'D17'"
+                     [class.has-popup]="true"
+                     (click)="onPaymentOptionClick('D17')">
                 <input type="radio" name="paymentMethod" value="D17" [(ngModel)]="paymentMethod"
-                       (ngModelChange)="onPaymentMethodChange()">
+                       (click)="$event.stopPropagation()">
                 <i class="fa-solid fa-mobile-screen"></i>
                 <span>
                   <strong>D17</strong>
@@ -87,9 +93,11 @@
                 </span>
               </label>
 
-              <label class="pay-option" [class.active]="paymentMethod === 'CLICTOPAY'">
+              <label class="pay-option" [class.active]="paymentMethod === 'CLICTOPAY'"
+                     [class.has-popup]="true"
+                     (click)="onPaymentOptionClick('CLICTOPAY')">
                 <input type="radio" name="paymentMethod" value="CLICTOPAY" [(ngModel)]="paymentMethod"
-                       (ngModelChange)="onPaymentMethodChange()">
+                       (click)="$event.stopPropagation()">
                 <i class="fa-solid fa-credit-card"></i>
                 <span>
                   <strong>ClicToPay</strong>
@@ -97,9 +105,11 @@
                 </span>
               </label>
 
-              <label class="pay-option" [class.active]="paymentMethod === 'WALLET'">
+              <label class="pay-option" [class.active]="paymentMethod === 'WALLET'"
+                     [class.has-popup]="true"
+                     (click)="onPaymentOptionClick('WALLET')">
                 <input type="radio" name="paymentMethod" value="WALLET" [(ngModel)]="paymentMethod"
-                       (ngModelChange)="onPaymentMethodChange()">
+                       (click)="$event.stopPropagation()">
                 <i class="fa-solid fa-wallet"></i>
                 <span>
                   <strong>Mobile wallet</strong>
@@ -107,9 +117,11 @@
                 </span>
               </label>
 
-              <label class="pay-option" [class.active]="paymentMethod === 'CARD'">
+              <label class="pay-option" [class.active]="paymentMethod === 'CARD'"
+                     [class.has-popup]="true"
+                     (click)="onPaymentOptionClick('CARD')">
                 <input type="radio" name="paymentMethod" value="CARD" [(ngModel)]="paymentMethod"
-                       (ngModelChange)="onPaymentMethodChange()">
+                       (click)="$event.stopPropagation()">
                 <i class="fa-solid fa-globe"></i>
                 <span>
                   <strong>International card</strong>
@@ -120,32 +132,90 @@
               </label>
             </div>
 
-            <!-- Card details: Stripe's iframe in production, a local simulator without a key -->
-            <div class="card-fields" *ngIf="paymentMethod === 'CARD'">
-              <hr class="bm-divider">
+            <!-- D17 and mobile wallet payments are handled by their provider.
+             Details now shown in the payment details popup when clicked. -->
+          </div>
+        </div>
+
+        <!-- Card details are collected in a popup. Stripe owns the live card iframe;
+             domestic-provider credentials are entered only on that provider's checkout. -->
+        <div class="ck-payment-backdrop" [class.is-open]="paymentDetailsOpen"
+             *ngIf="hasPaymentDetailsPopup"
+             (click)="closePaymentDetails()">
+          <section #paymentDialog class="ck-payment-dialog" role="dialog"
+                   [attr.aria-modal]="paymentDetailsOpen ? 'true' : null"
+                   [attr.aria-hidden]="paymentDetailsOpen ? null : 'true'"
+                   [attr.aria-label]="paymentDialogTitle" tabindex="-1"
+                   (click)="$event.stopPropagation()">
+            <header class="ck-payment-dialog-head">
+              <span class="ck-payment-dialog-icon">
+                <i class="fa-solid" [class.fa-credit-card]="paymentMethod === 'CARD'"
+                   [class.fa-shield-halved]="paymentMethod !== 'CARD'"></i>
+              </span>
+              <h2>{{ paymentDialogTitle }}</h2>
+              <button type="button" class="ck-payment-dialog-close" aria-label="Close payment details"
+                      (click)="closePaymentDetails()">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </header>
+
+            <div class="ck-payment-dialog-body" *ngIf="paymentMethod === 'CARD'">
+              <p class="bm-muted">Enter your card information to continue securely.</p>
               <app-card-field #cardField
                               [visible]="true"
                               (outcomeChange)="simulatedOutcome = $event"
                               (validityChange)="cardReady = $event">
               </app-card-field>
-            </div>
-
-            <!-- Domestic instruments: no card form, the provider's checkout collects them -->
-            <div class="card-fields" *ngIf="isDomestic(paymentMethod)">
-              <hr class="bm-divider">
-              <p class="ck-note ck-domestic-note">
-                <i class="fa-solid fa-circle-info"></i>
-                You will be taken to
-                <strong>{{ methodLabel(paymentMethod) }}</strong> to complete the payment securely.
-                Your order is only confirmed once the payment succeeds.
+              <p class="ck-error" *ngIf="!cardReady">
+                <i class="fa-solid fa-circle-exclamation"></i> Complete the card details before placing your order.
               </p>
             </div>
-          </div>
+
+            <div class="ck-payment-dialog-body" *ngIf="paymentMethod === 'EDINAR'">
+              <p class="bm-muted">Enter your e-Dinar card number and PIN to continue securely.</p>
+              <app-edinar-field #edinarField
+                                [visible]="true"
+                                (tokenChange)="edinarToken = $event"
+                                (validityChange)="edinarReady = $event">
+              </app-edinar-field>
+              <p class="ck-error" *ngIf="!edinarReady">
+                <i class="fa-solid fa-circle-exclamation"></i> Complete the e-Dinar details before placing your order.
+              </p>
+            </div>
+
+            <div class="ck-payment-dialog-body" *ngIf="paymentMethod === 'CLICTOPAY'">
+              <p>
+                Continue your payment through the official {{ methodLabel(paymentMethod) }} checkout.
+                This app does not collect your card number, PIN, password, or verification code.
+              </p>
+              <p class="ck-provider-note">
+                <i class="fa-solid fa-lock"></i>
+                Only enter payment credentials on the provider's secure checkout page.
+              </p>
+            </div>
+
+            <div class="ck-payment-dialog-body" *ngIf="paymentMethod === 'D17' || paymentMethod === 'WALLET'">
+              <p>
+                You will be taken to <strong>{{ methodLabel(paymentMethod) }}</strong> to complete the payment securely.
+                Your order is only confirmed once the payment succeeds.
+              </p>
+              <p class="ck-provider-note">
+                <i class="fa-solid fa-lock"></i>
+                Only enter payment credentials on the provider's secure checkout page.
+              </p>
+            </div>
+
+            <footer class="ck-payment-dialog-foot">
+              <button type="button" class="bm-btn bm-btn-primary" (click)="closePaymentDetails()">
+                {{ paymentMethod === 'CARD' ? 'Done' : 'Got it' }}
+              </button>
+            </footer>
+          </section>
         </div>
 
         <!-- Submit -->
         <button class="bm-btn bm-btn-primary bm-btn-lg bm-btn-block place-btn" type="submit"
-                [disabled]="processing">
+                [disabled]="processing || (paymentMethod === 'CARD' && !cardReady) || (paymentMethod === 'EDINAR' && !edinarReady)">
           <ng-container *ngIf="!processing">
             <i class="fa-solid fa-lock"></i> Place order
           </ng-container>

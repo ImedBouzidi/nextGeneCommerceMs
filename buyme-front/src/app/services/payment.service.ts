@@ -197,4 +197,16 @@ export class PaymentService {
   getAll(): Observable<PaymentDto[]> {
     return this.http.get<PaymentDto[]>(this.apiUrl);
   }
+
+  // ------------------------------------------------------------ e-Dinar iframe
+
+  /** e-Dinar provider iframe URL (configured via APP_CONFIG). */
+  get edinarIframeUrl(): string {
+    return this.config?.edinarIframeUrl || '';
+  }
+
+  /** Whether e-Dinar iframe integration is configured. */
+  get edinarEnabled(): boolean {
+    return this.edinarIframeUrl.startsWith('http');
+  }
 }

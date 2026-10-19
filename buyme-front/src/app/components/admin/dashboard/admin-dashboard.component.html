@@ -41,6 +41,82 @@
         }
       </section>
 
+      <!-- ── Customer Segmentation ──────────────────────────── -->
+      <section class="adm-segmentation bm-card" aria-label="Top customers">
+        <header class="bm-card-head adm-panel-head">
+          <h2 class="bm-card-title">
+            <i class="fa-solid fa-users text-accent"></i>
+            Top Customers
+          </h2>
+          <div class="adm-panel-actions">
+            <select class="adm-select" [(ngModel)]="selectedSort" (ngModelChange)="onSortChange()">
+              @for (opt of sortOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+            <button class="bm-btn bm-btn-secondary" (click)="generateTestData()" [disabled]="segmentationLoading">
+              <i class="fa-solid fa-dice"></i> Generate Test Data
+            </button>
+          </div>
+        </header>
+
+        <div class="adm-warn" *ngIf="segmentationError">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>{{ segmentationError }}</span>
+        </div>
+
+        <div class="bm-state" *ngIf="segmentationLoading && topCustomers.length === 0">
+          <span class="bm-spinner" aria-hidden="true"></span>
+          <p>Loading customer data…</p>
+        </div>
+
+        <div class="bm-table-wrap" *ngIf="topCustomers.length > 0 && !segmentationLoading">
+          <table class="bm-table adm-table adm-customer-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Customer ID</th>
+                <th>Orders</th>
+                <th>Total Spend</th>
+                <th>Avg Rating</th>
+                <th>Interactions</th>
+                <th>Recency (days)</th>
+                <th class="score-col">Buying</th>
+                <th class="score-col">Rating</th>
+                <th class="score-col">Interaction</th>
+                <th class="score-col total">Engagement</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cust of topCustomers; track cust.customer_id; let i = $index) {
+                <tr>
+                  <td class="strong rank">{{ i + 1 }}</td>
+                  <td class="customer-id">{{ cust.customer_id }}</td>
+                  <td>{{ cust.frequency }}</td>
+                  <td class="currency">{{ formatCurrency(cust.monetary) }}</td>
+                  <td class="rating">{{ cust.avg_rating.toFixed(1) }} <span class="muted">({{ cust.total_ratings }})</span></td>
+                  <td>{{ formatNumber(cust.total_interactions) }}</td>
+                  <td class="recency">{{ cust.recency }}</td>
+                  <td class="score-col"><span class="score-badge" [class]="getScoreClass(cust.buying_score)">{{ (cust.buying_score * 100).toFixed(0) }}%</span></td>
+                  <td class="score-col"><span class="score-badge" [class]="getScoreClass(cust.rating_score)">{{ (cust.rating_score * 100).toFixed(0) }}%</span></td>
+                  <td class="score-col"><span class="score-badge" [class]="getScoreClass(cust.interaction_score)">{{ (cust.interaction_score * 100).toFixed(0) }}%</span></td>
+                  <td class="score-col total"><span class="score-badge total" [class]="getScoreClass(cust.engagement_score)">{{ (cust.engagement_score * 100).toFixed(0) }}%</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bm-state" *ngIf="topCustomers.length === 0 && !segmentationLoading">
+          <i class="fa-solid fa-users"></i>
+          <h3>No customer data available</h3>
+          <p>Click "Generate Test Data" to create synthetic customers with orders, ratings, and interactions.</p>
+          <button class="bm-btn bm-btn-primary" (click)="generateTestData()" [disabled]="segmentationLoading">
+            <i class="fa-solid fa-dice"></i> Generate Test Data
+          </button>
+        </div>
+      </section>
+
       <!-- ── Two-column: recent orders + shortcuts ──────────── -->
       <section class="adm-split">
 
@@ -77,8 +153,8 @@
                             [class.bm-badge-info]="statusTone(order.status) === 'info'"
                             [class.bm-badge-danger]="statusTone(order.status) === 'bad'"
                             [class.bm-badge-muted]="statusTone(order.status) === 'muted'">
-                        {{ order.status || 'UNKNOWN' }}
-                      </span>
+                          {{ order.status || 'UNKNOWN' }}
+                        </span>
                     </td>
                   </tr>
                 }

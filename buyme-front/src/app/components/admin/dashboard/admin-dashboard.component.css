@@ -195,3 +195,93 @@
 @media (max-width: 1100px) {
   .adm-split { grid-template-columns: 1fr; }
 }
+
+/* ── Customer Segmentation ─────────────────────────────────────── */
+
+.adm-segmentation {
+  margin-bottom: 26px;
+}
+
+.adm-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.adm-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-med);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+
+.adm-customer-table { min-width: 900px; }
+
+.adm-customer-table th,
+.adm-customer-table td {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
+.rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.rank:nth-child(-n+3) { background: var(--accent-gold); color: #000; }
+
+.customer-id { font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); }
+
+.currency { font-weight: 600; color: var(--text-primary); }
+
+.rating { display: flex; align-items: center; gap: 4px; }
+
+.rating .muted { color: var(--text-muted); font-size: 0.75rem; }
+
+.recency {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.recency[data-recency="0"] { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+.recency[data-recency="1"] { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+.recency[data-recency="2"] { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+.score-col { text-align: center; }
+
+.score-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.score-badge.score-high { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+.score-badge.score-medium { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+.score-badge.score-low { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+.score-badge.total { font-size: 0.78rem; padding: 5px 12px; }
+
+@media (max-width: 900px) {
+  .adm-panel-actions { flex-direction: column; align-items: stretch; }
+  .adm-select { min-width: 100%; }
+}

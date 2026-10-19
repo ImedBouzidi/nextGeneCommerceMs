@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, ViewChild, HostListener, ElementRef } from '@angular/core';
 import { CommonModule, CurrencyPipe, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../../services/cart.service';
@@ -9,6 +9,7 @@ import { firstValueFrom, Observable } from 'rxjs';
 import { ModalService } from '../../../shared/modal.service';
 import { LoginService } from '../../../services/login.service';
 import { CardFieldComponent } from './card-field.component';
+import { EdinarFieldComponent } from './edinar-field.component';
 
 interface CartItem {
   productId: number;
@@ -20,7 +21,7 @@ interface CartItem {
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, AsyncPipe, RouterModule, CardFieldComponent],
+  imports: [CommonModule, FormsModule, CurrencyPipe, AsyncPipe, RouterModule, CardFieldComponent, EdinarFieldComponent],
   templateUrl: './checkout.component.html',
   styleUrls: ['./checkout.component.css']
 })
@@ -40,9 +41,18 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
   simulatedOutcome: string | null = null;
 
   /** Whether the card form is complete enough to submit. */
-  cardReady = true;
+  cardReady = false;
+  paymentDetailsOpen = false;
 
   @ViewChild('cardField') cardField?: CardFieldComponent;
+  @ViewChild('edinarField') edinarField?: EdinarFieldComponent;
+  @ViewChild('paymentDialog') paymentDialog?: ElementRef<HTMLElement>;
+
+  /** Whether the e-Dinar form has a valid token. */
+  edinarReady = false;
+
+  /** Token received from e-Dinar iframe. */
+  edinarToken: string | null = null;
 
   items$!: Observable<CartItem[]>;  // ← Will be assigned in constructor
 
@@ -128,6 +138,18 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
             this.paymentService.createPayment(cardPayload, `order-${order.id}`));
           // 202 only means "accepted" — the charge completes over Kafka.
           payments.push(await this.awaitPaymentOutcome(order.id!, pay));
+        } else if (this.paymentMethod === 'EDINAR') {
+          const amountForItem = (item.price * item.quantity) * (1 - (discountPercent / 100));
+          const edinarPayload = {
+            orderId: order.id,
+            paymentMethod: this.paymentMethod,
+            amount: Math.max(0, amountForItem),
+            // Token from e-Dinar iframe (card number + PIN tokenized by provider)
+            edinarToken: this.edinarToken
+          };
+          const pay = await firstValueFrom(
+            this.paymentService.createPayment(edinarPayload, `order-${order.id}`));
+          payments.push(await this.awaitPaymentOutcome(order.id!, pay));
         } else {
           const amountForItem = (item.price * item.quantity) * (1 - (discountPercent / 100));
           const codPayload = {
@@ -151,7 +173,7 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
 
       this.cartService.clear();
       this.modalService.showAlert(
-        this.paymentMethod === 'CARD'
+        this.paymentMethod === 'CARD' || this.paymentMethod === 'EDINAR'
           ? 'Order placed and paid successfully — thank you!'
           : 'Order placed successfully. Pay on delivery when you receive the items.',
         'Order placed',
@@ -210,8 +232,51 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
   /** (Re)mounts the card field when the customer switches to card. */
   onPaymentMethodChange(): void {
     this.simulatedOutcome = null;
-    this.cardReady = true;
-    queueMicrotask(() => this.cardField?.mountIfNeeded());
+    this.cardReady = this.paymentMethod !== 'CARD';
+    this.edinarReady = this.paymentMethod !== 'EDINAR';
+    // Popup no longer auto-opens; user must click the selected option to open it
+    queueMicrotask(() => {
+      this.cardField?.mountIfNeeded();
+      this.edinarField?.mountIfNeeded();
+    });
+  }
+
+  /** Handles click on a payment option label.
+   * If the option is already selected, opens the payment details popup.
+   * Otherwise, the radio button selection handles the change. */
+  onPaymentOptionClick(method: PaymentMethod): void {
+    if (this.paymentMethod === method && this.hasPaymentDetailsPopup) {
+      // Already selected — open the popup
+      this.paymentDetailsOpen = true;
+      queueMicrotask(() => {
+        this.paymentDialog?.nativeElement.focus();
+      });
+    }
+    // If not selected, the radio button's ngModelChange will fire and call onPaymentMethodChange
+  }
+
+  get hasPaymentDetailsPopup(): boolean {
+    return this.paymentMethod === 'CARD'
+      || this.paymentMethod === 'EDINAR'
+      || this.paymentMethod === 'CLICTOPAY'
+      || this.paymentMethod === 'D17'
+      || this.paymentMethod === 'WALLET';
+  }
+
+  get paymentDialogTitle(): string {
+    if (this.paymentMethod === 'CARD') return 'Card details';
+    if (this.paymentMethod === 'EDINAR') return 'e-Dinar credentials';
+    if (this.paymentMethod === 'D17' || this.paymentMethod === 'WALLET') return `${this.methodLabel(this.paymentMethod)} secure checkout`;
+    return `${this.methodLabel(this.paymentMethod)} secure checkout`;
+  }
+
+  closePaymentDetails(): void {
+    this.paymentDetailsOpen = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.paymentDetailsOpen) this.closePaymentDetails();
   }
 
   /**

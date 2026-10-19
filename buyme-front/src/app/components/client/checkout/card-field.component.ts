@@ -62,12 +62,14 @@ import { StripeCardElement } from '@stripe/stripe-js';
         <div class="bm-field">
           <label class="bm-label" for="ck-exp">Expiry</label>
           <input id="ck-exp" class="bm-input" type="text" inputmode="numeric"
-                 autocomplete="cc-exp" placeholder="12/34" [(ngModel)]="expiry">
+                 autocomplete="cc-exp" placeholder="12/34" [(ngModel)]="expiry"
+                 (ngModelChange)="onFormChange()">
         </div>
         <div class="bm-field">
           <label class="bm-label" for="ck-cvc">CVC</label>
           <input id="ck-cvc" class="bm-input" type="password" inputmode="numeric"
-                 autocomplete="cc-csc" placeholder="123" [(ngModel)]="cvc">
+                 autocomplete="cc-csc" placeholder="123" [(ngModel)]="cvc"
+                 (ngModelChange)="onFormChange()">
         </div>
       </div>
 
@@ -175,6 +177,11 @@ export class CardFieldComponent implements AfterViewInit, OnDestroy {
     this.mode = this.paymentService.cardPaymentsEnabled ? 'stripe' : 'simulator';
     if (this.mode === 'stripe' && this.stripeHost?.nativeElement) {
       this.stripeCardElement = await this.paymentService.mountCardElement(this.stripeHost.nativeElement);
+      if (this.stripeCardElement) {
+        this.stripeCardElement.on('change', event => this.validityChange.emit(event.complete));
+      } else {
+        this.validityChange.emit(false);
+      }
     }
     this.mounted = true;
   }
@@ -199,6 +206,10 @@ export class CardFieldComponent implements AfterViewInit, OnDestroy {
     const match = this.testCards.find(c => c.number.replace(/\s+/g, '') === digits);
     this.selectedOutcome = match || null;
     this.outcomeChange.emit(match ? match.outcome : null);
+    this.validityChange.emit(this.ready);
+  }
+
+  onFormChange(): void {
     this.validityChange.emit(this.ready);
   }
 

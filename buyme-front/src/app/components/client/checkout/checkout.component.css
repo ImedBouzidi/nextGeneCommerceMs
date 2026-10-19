@@ -41,6 +41,7 @@
   background: var(--bg-faint);
   cursor: pointer;
   transition: all .22s var(--ease-smooth);
+  position: relative;
 }
 
 .pay-option:hover {
@@ -70,6 +71,7 @@
   display: flex;
   flex-direction: column;
   line-height: 1.35;
+  flex: 1;
 }
 
 .pay-option strong {
@@ -79,6 +81,23 @@
 
 .pay-option small {
   font-size: .74rem;
+}
+
+/* Click-to-open indicator for selected payment options with popup */
+.pay-option.active.has-popup::after {
+  content: '\f078'; /* fa-chevron-down */
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 0.7rem;
+  color: var(--accent-light);
+  margin-left: auto;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.pay-option.active.has-popup:hover::after {
+  transform: translateY(1px);
+  opacity: 1;
 }
 
 /* ── Card fields ── */
@@ -256,4 +275,134 @@
 .pay-option.is-disabled {
   opacity: .55;
   cursor: not-allowed;
+}
+
+/* ── Payment details popup ── */
+.ck-payment-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--scrim, rgba(8, 12, 24, .72));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.ck-payment-backdrop.is-open {
+  display: flex;
+}
+
+.ck-payment-dialog {
+  width: min(100%, 560px);
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
+  border: 1px solid var(--border-med);
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--bg-surface), var(--bg-surface));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+  animation: ck-fade .2s ease-out;
+}
+
+.ck-payment-dialog:focus {
+  outline: none;
+}
+
+.ck-payment-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px 14px;
+}
+
+.ck-payment-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid var(--border-glow);
+  border-radius: 10px;
+  background: var(--accent-dim);
+  color: var(--accent-light);
+}
+
+.ck-payment-dialog-head h2 {
+  flex: 1;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.ck-payment-dialog-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-med);
+  border-radius: 9px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ck-payment-dialog-body {
+  padding: 0 22px 20px;
+}
+
+.ck-payment-dialog-body > p:first-child {
+  margin-top: 0;
+}
+
+.ck-payment-dialog-body > p {
+  color: var(--text-secondary);
+  font-size: .9rem;
+  line-height: 1.55;
+}
+
+.ck-payment-dialog-body .ck-error {
+  margin-top: 10px;
+}
+
+.ck-provider-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-faint);
+}
+
+.ck-provider-note i {
+  margin-top: 3px;
+  color: var(--accent-light);
+}
+
+.ck-payment-dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-subtle);
+}
+
+@media (max-width: 600px) {
+  .ck-payment-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .ck-payment-dialog {
+    max-height: 92vh;
+    border-radius: 18px 18px 12px 12px;
+  }
+
+  .ck-payment-dialog-head,
+  .ck-payment-dialog-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
