@@ -1,0 +1,139 @@
+<section class="bm-page">
+  <div class="bm-container">
+
+    <!-- ── Page head ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow">
+          <i class="fa-solid fa-basket-shopping"></i> NextGenTech / Cart
+        </span>
+        <h1 class="bm-page-title">Your <span class="bm-gradient">Cart</span></h1>
+        <p class="bm-page-sub">
+          <ng-container *ngIf="filteredItems.length > 0; else headEmpty">
+            {{ filteredItems.length }} item{{ filteredItems.length === 1 ? '' : 's' }} ready for checkout.
+          </ng-container>
+          <ng-template #headEmpty>Your cart is currently empty.</ng-template>
+        </p>
+      </div>
+
+      <div class="head-search" *ngIf="filteredItems.length > 0">
+        <div class="bm-input-group">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input class="bm-input" type="text" name="searchTerm" placeholder="Filter items…"
+                 [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" (ngModelChange)="onSearch()">
+        </div>
+        <button class="bm-btn bm-btn-ghost bm-btn-sm" type="button" *ngIf="searchTerm" (click)="clearSearch()">
+          <i class="fa-solid fa-xmark"></i> Clear
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Empty state ── -->
+    <div class="bm-card bm-state" *ngIf="filteredItems.length === 0">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <h3>Nothing in your cart</h3>
+      <p>Browse the shop and add a few products — they'll show up here instantly.</p>
+      <a class="bm-btn bm-btn-primary" routerLink="/client/shop">
+        <i class="fa-solid fa-store"></i> Continue shopping
+      </a>
+    </div>
+
+    <!-- ── Cart + summary ── -->
+    <div class="cart-layout" *ngIf="filteredItems.length > 0">
+
+      <!-- Line items -->
+      <div class="bm-card">
+        <div class="bm-card-head">
+          <h2 class="bm-card-title">
+            <i class="fa-solid fa-box me-2 text-accent"></i>Items
+          </h2>
+          <span class="bm-badge bm-badge-muted">{{ filteredItems.length }}</span>
+        </div>
+
+        <ul class="line-list">
+          <li class="line-item" *ngFor="let item of filteredItems">
+
+            <a class="thumb" [routerLink]="['/client/single', item.productId]">
+              <img [src]="item.image || '/assets/img/product-placeholder.svg'" [alt]="item.name">
+            </a>
+
+            <div class="line-main">
+              <a class="line-name" [routerLink]="['/client/single', item.productId]">{{ item.name }}</a>
+              <span class="bm-small bm-muted">{{ item.price | currency:'USD':'symbol':'1.2-2' }} each</span>
+              <span class="bm-badge bm-badge-warn stock-badge"
+                    *ngIf="item.stock !== null && item.stock !== undefined">
+                <i class="fa-solid fa-layer-group"></i> {{ item.stock }} in stock
+              </span>
+            </div>
+
+            <div class="qty">
+              <button class="qty-btn" type="button" (click)="decrease(item)"
+                      [attr.aria-label]="'Decrease quantity of ' + item.name">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <span class="qty-value">{{ item.quantity }}</span>
+              <button class="qty-btn" type="button" (click)="increase(item)"
+                      [disabled]="item.stock !== null && item.stock !== undefined && item.quantity >= item.stock"
+                      [attr.aria-label]="'Increase quantity of ' + item.name">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+
+            <span class="line-total">{{ item.price * item.quantity | currency:'USD':'symbol':'1.2-2' }}</span>
+
+            <button class="bm-btn bm-btn-ghost bm-btn-icon line-remove" type="button"
+                    (click)="remove(item.productId)" [attr.aria-label]="'Remove ' + item.name">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Summary -->
+      <aside class="summary bm-card bm-card-pad">
+        <h2 class="bm-card-title">
+          <i class="fa-solid fa-receipt me-2 text-accent"></i>Order summary
+        </h2>
+
+        <div class="summary-row">
+          <span class="bm-secondary">Subtotal</span>
+          <span>{{ getSubtotal(filteredItems) | currency:'USD':'symbol':'1.2-2' }}</span>
+        </div>
+
+        <div class="summary-row" *ngIf="discountPercent > 0">
+          <span class="bm-secondary">
+            Discount
+            <span class="bm-badge bm-badge-success">{{ discountPercent }}%</span>
+          </span>
+          <span class="text-success-amount">
+            &minus;{{ (getSubtotal(filteredItems) * discountPercent / 100) | currency:'USD':'symbol':'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="summary-row">
+          <span class="bm-secondary">Shipping</span>
+          <span>
+            <ng-container *ngIf="shippingRate > 0; else freeShip">{{ shippingRate | currency:'USD' }}</ng-container>
+            <ng-template #freeShip><span class="bm-badge bm-badge-success">Free</span></ng-template>
+          </span>
+        </div>
+
+        <hr class="bm-divider">
+
+        <div class="summary-row summary-grand">
+          <span>Total</span>
+          <span class="bm-price">{{ getTotalWithDiscount(filteredItems) | currency:'USD':'symbol':'1.2-2' }}</span>
+        </div>
+
+        <a class="bm-btn bm-btn-primary bm-btn-lg bm-btn-block summary-cta"
+           routerLink="/client/checkout">
+          <i class="fa-solid fa-lock"></i> Proceed to Checkout
+        </a>
+
+        <a class="bm-btn bm-btn-ghost bm-btn-block summary-back" routerLink="/client/shop">
+          <i class="fa-solid fa-arrow-left"></i> Keep shopping
+        </a>
+      </aside>
+    </div>
+  </div>
+</section>

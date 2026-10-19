@@ -1,0 +1,172 @@
+<div class="mo-page bm-page">
+  <div class="bm-container">
+
+    <!-- ── Page head ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-shield-halved"></i> Admin</span>
+        <h1 class="bm-page-title">Order management</h1>
+        <p class="bm-page-sub">
+          {{ orders.length }} orders · {{ pendingApprovalCount }} awaiting approval · {{ approvedCount }} approved
+        </p>
+      </div>
+      <div class="bm-flex bm-wrap bm-gap-1 mo-head-actions">
+        <button type="button" class="bm-btn bm-btn-outline" (click)="refreshAll()" [disabled="operationInProgress || autoRefreshPending">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Alert ── -->
+    <div *ngIf="showAlert" class="mo-alert"
+         [class.ok]="alertType === 'success'"
+         [class.info]="alertType === 'info'"
+         [class.bad]="alertType === 'error'" role="status">
+      <i class="fa-solid"
+         [class.fa-circle-check]="alertType === 'success'"
+         [class.fa-circle-info]="alertType === 'info'"
+         [class.fa-triangle-exclamation]="alertType === 'error'"></i>
+      <span class="mo-alert-text">{{ alertMessage }}</span>
+      <button type="button" class="bm-btn bm-btn-ghost bm-btn-sm" (click)="closeAlert()" aria-label="Dismiss">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- ── Filters ── -->
+    <div class="bm-card mo-filters">
+      <div class="bm-chips">
+        <button type="button" class="bm-chip" [class.active]="searchTerm === ''" (click)="searchTerm = ''">
+          All
+        </button>
+        <button type="button" class="bm-chip" [class.active]="searchTerm === 'PENDING'"
+                (click)="searchTerm = 'PENDING'">Pending</button>
+        <button type="button" class="bm-chip" [class.active]="searchTerm === 'APPROVED'"
+                (click)="searchTerm = 'APPROVED'">Approved</button>
+        <button type="button" class="bm-chip" [class.active]="searchTerm === 'DELIVERED'"
+                (click)="searchTerm = 'DELIVERED'">Delivered</button>
+        <button type="button" class="bm-chip" [class.active]="searchTerm === 'CANCELLED'"
+                (click)="searchTerm = 'CANCELLED'">Cancelled</button>
+      </div>
+
+      <div class="mo-search bm-input-group">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" class="bm-input" placeholder="Search order id, product id or user id…"
+               [ngModel]="searchTerm" (ngModelChange)="searchTerm = $event; currentPage = 1" name="orderSearch">
+      </div>
+    </div>
+
+    <!-- ── Orders table ── -->
+    <div class="bm-state" *ngIf="ordersLoading">
+      <span class="bm-spinner" aria-hidden="true"></span>
+      <p>Loading orders…</p>
+    </div>
+
+    <div class="bm-table-wrap" *ngIf="!ordersLoading && pagedOrders.length">
+      <table class="bm-table">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Product</th>
+          <th>Date</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th class="mo-col-actions">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (order of pagedOrders; track order.id) {
+          <tr>
+            <td class="strong">#{{ order.id }}</td>
+            <td>
+              <div class="mo-cust">
+                <span class="mo-cust-name">
+                  {{ (userMap[order.userId]?.firstName || 'User') + ' ' + (userMap[order.userId]?.lastName || ('#' + order.userId)) }}
+                </span>
+                <span class="mo-cust-sub">{{ order.mobile || ('User #' + order.userId) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="mo-product">{{ getProductName(order.productId) }}</span>
+              <span class="mo-cust-sub">× {{ order.qteOrdered }}</span>
+            </td>
+            <td>{{ order.orderDate | date:'mediumDate' }}</td>
+            <td>
+              <span class="bm-badge"
+                    [class.bm-badge-success]="order.paymentStatus === 'PAID' || order.paymentStatus === 'PAID_COD'"
+                    [class.bm-badge-warn]="order.paymentStatus === 'PENDING'"
+                    [class.bm-badge-danger]="order.paymentStatus === 'FAILED'"
+                    [class.bm-badge-muted]="order.paymentStatus !== 'PAID' && order.paymentStatus !== 'PAID_COD' && order.paymentStatus !== 'PENDING' && order.paymentStatus !== 'FAILED'">
+                <i class="fa-solid fa-credit-card"></i>
+                {{ getPaymentInfo(order) }}
+              </span>
+            </td>
+            <td>
+              <span class="bm-badge"
+                    [class.bm-badge-warn]="order.status === 'PENDING' || order.status === 'CONFIRMED'"
+                    [class.bm-badge-info]="order.status === 'APPROVED' || order.status === 'SHIPPED'"
+                    [class.bm-badge-success]="order.status === 'DELIVERED'"
+                    [class.bm-badge-danger]="order.status === 'CANCELLED'"
+                    [class.bm-badge-muted]="order.status !== 'PENDING' && order.status !== 'CONFIRMED' && order.status !== 'APPROVED' && order.status !== 'SHIPPED' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED'">
+                {{ order.status }}
+              </span>
+            </td>
+            <td class="mo-col-actions">
+              <div class="bm-flex bm-gap-1 mo-actions">
+                <button type="button" class="bm-btn bm-btn-primary bm-btn-sm"
+                        *ngIf="order.status !== 'APPROVED' && order.status !== 'CANCELLED' && order.status !== 'DELIVERED'"
+                        (click)="approveOrder(order)" [disabled]="approvingOrder || operationInProgress">
+                  <i class="fa-solid fa-check"></i>
+                  <span>Approve</span>
+                </button>
+                <button type="button" class="bm-btn bm-btn-success bm-btn-sm"
+                        *ngIf="order.status !== 'DELIVERED' && order.status !== 'CANCELLED'"
+                        (click)="markDelivered(order)" [disabled]="operationInProgress">
+                  <i class="fa-solid fa-truck-fast"></i>
+                  <span>Deliver</span>
+                </button>
+                <button type="button" class="bm-btn bm-btn-ghost bm-btn-icon"
+                        *ngIf="order.status !== 'CANCELLED'"
+                        (click)="declineOrder(order)" [disabled]="operationInProgress" aria-label="Decline order">
+                  <i class="fa-solid fa-ban"></i>
+                </button>
+                <button type="button" class="bm-btn bm-btn-danger bm-btn-icon"
+                        (click)="deleteOrder(order)" [disabled]="operationInProgress" aria-label="Delete order">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bm-state" *ngIf="!ordersLoading && !filteredOrders().length">
+      <i class="fa-solid fa-receipt"></i>
+      <h3>{{ orders.length ? 'No matching orders' : 'No orders yet' }}</h3>
+      <p>{{ orders.length ? 'Try another status chip or clear the search.' : 'Orders placed in the shop will appear here.' }}</p>
+      <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="loadOrders()" *ngIf="!orders.length">
+        <i class="fa-solid fa-rotate"></i> Load orders
+      </button>
+    </div>
+
+    <!-- ── Pagination ── -->
+    <nav class="mo-pager" *ngIf="!ordersLoading && totalPages > 1" aria-label="Orders pagination">
+      <span class="bm-small bm-muted">
+        Page {{ currentPage }} of {{ totalPages }} · {{ filteredOrders().length }} orders
+      </span>
+      <div class="bm-chips">
+        <button type="button" class="bm-chip" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button type="button" class="bm-chip" *ngFor="let p of pagesArray()"
+                [class.active]="p === currentPage" (click)="changePage(p)">{{ p }}</button>
+        <button type="button" class="bm-chip" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </nav>
+  </div>
+</div>

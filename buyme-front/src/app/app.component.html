@@ -1,0 +1,11 @@
+@if (!isAdminRoute) {
+  <app-navbar></app-navbar>
+}
+<div class="layout" [class.layout--admin]="isAdminRoute">
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
+</div>
+
+<!-- Global shared modal -->
+<app-shared-modal></app-shared-modal>

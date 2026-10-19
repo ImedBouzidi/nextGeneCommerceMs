@@ -1,0 +1,359 @@
+<div class="mp-page bm-page">
+  <div class="bm-container">
+
+    <!-- ── Page head ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-shield-halved"></i> Admin</span>
+        <h1 class="bm-page-title">Catalog management</h1>
+        <p class="bm-page-sub">
+          {{ products.length }} products · {{ categories.length }} categories
+        </p>
+      </div>
+      <div class="bm-flex bm-wrap bm-gap-1 mp-head-actions">
+        <button type="button" class="bm-btn bm-btn-outline" (click)="refreshAll()" [disabled]="operationInProgress">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Refresh</span>
+        </button>
+        <button type="button" class="bm-btn bm-btn-primary" (click)="openProductModal()" [disabled]="operationInProgress">
+          <i class="fa-solid fa-plus"></i>
+          <span>New product</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Alert ── -->
+    <div *ngIf="showAlert" class="mp-alert"
+         [class.ok]="alertType === 'success'"
+         [class.info]="alertType === 'info'"
+         [class.bad]="alertType === 'error'" role="status">
+      <i class="fa-solid"
+         [class.fa-circle-check]="alertType === 'success'"
+         [class.fa-circle-info]="alertType === 'info'"
+         [class.fa-triangle-exclamation]="alertType === 'error'"></i>
+      <span class="mp-alert-text">{{ alertMessage }}</span>
+      <button type="button" class="bm-btn bm-btn-ghost bm-btn-sm" (click)="closeAlert()" aria-label="Dismiss">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- ── Section tabs + search ── -->
+    <div class="bm-card mp-toolbar">
+      <div class="bm-chips">
+        <button type="button" class="bm-chip" [class.active]="activeSection === 'categories'"
+                (click)="setSection('categories')">
+          <i class="fa-solid fa-layer-group"></i> Categories
+        </button>
+        <button type="button" class="bm-chip" [class.active]="activeSection === 'products'"
+                (click)="setSection('products')">
+          <i class="fa-solid fa-box"></i> Products
+        </button>
+      </div>
+
+      <div class="mp-search bm-input-group" *ngIf="activeSection === 'products'">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" class="bm-input" placeholder="Search products by name, description or category…"
+               [ngModel]="productSearchTerm" (ngModelChange)="productSearchTerm = $event" name="productSearch">
+      </div>
+      <div class="mp-search bm-input-group" *ngIf="activeSection === 'categories'">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" class="bm-input" placeholder="Search categories…"
+               [ngModel]="categorySearchTerm" (ngModelChange)="categorySearchTerm = $event" name="categorySearch">
+      </div>
+    </div>
+
+    <!-- ── Categories ── -->
+    <section *ngIf="activeSection === 'categories'">
+      <div class="bm-between mp-sub-head">
+        <h2 class="bm-card-title">
+          <i class="fa-solid fa-layer-group text-accent"></i>
+          Categories
+        </h2>
+        <button type="button" class="bm-btn bm-btn-primary bm-btn-sm" (click)="openCategoryModal()" [disabled]="operationInProgress">
+          <i class="fa-solid fa-plus"></i>
+          <span>New category</span>
+        </button>
+      </div>
+
+      <div class="bm-state" *ngIf="categoriesLoading">
+        <span class="bm-spinner" aria-hidden="true"></span>
+        <p>Loading categories…</p>
+      </div>
+
+      <div class="bm-table-wrap" *ngIf="!categoriesLoading && filteredCategories().length">
+        <table class="bm-table">
+          <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th class="mp-col-actions">Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          @for (cat of filteredCategories(); track cat.id) {
+            <tr>
+              <td class="strong">{{ cat.name }}</td>
+              <td>{{ cat.description }}</td>
+              <td class="mp-col-actions">
+                <div class="bm-flex bm-gap-1">
+                  <button type="button" class="bm-btn bm-btn-ghost bm-btn-icon" (click)="openCategoryModal(cat)"
+                          [disabled]="operationInProgress" aria-label="Edit category">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button type="button" class="bm-btn bm-btn-danger bm-btn-icon" (click)="deleteCategory(cat.id!)"
+                          [disabled]="operationInProgress" aria-label="Delete category">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bm-state" *ngIf="!categoriesLoading && !filteredCategories().length">
+        <i class="fa-solid fa-layer-group"></i>
+        <h3>No categories yet</h3>
+        <p>Create your first category to start grouping products.</p>
+        <button type="button" class="bm-btn bm-btn-primary bm-btn-sm" (click)="openCategoryModal()">
+          <i class="fa-solid fa-plus"></i> New category
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Products ── -->
+    <section *ngIf="activeSection === 'products'">
+      <div class="bm-between mp-sub-head">
+        <h2 class="bm-card-title">
+          <i class="fa-solid fa-box text-accent"></i>
+          Products
+          <span class="bm-badge bm-badge-muted">{{ filteredProducts().length }}</span>
+        </h2>
+      </div>
+
+      <div class="bm-state" *ngIf="productsLoading">
+        <span class="bm-spinner" aria-hidden="true"></span>
+        <p>Loading products…</p>
+      </div>
+
+      <div class="bm-table-wrap" *ngIf="!productsLoading && filteredProducts().length">
+        <table class="bm-table">
+          <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th class="mp-col-actions">Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          @for (prod of filteredProducts(); track prod.id) {
+            <tr>
+              <td>
+                <div class="mp-prod">
+                  <img class="mp-thumb" [src]="imageUrl(prod.images?.[0])" [alt]="prod.name" (error)="onImageError($event)">
+                  <div class="mp-prod-meta">
+                    <span class="mp-prod-name">{{ prod.name }}</span>
+                    <span class="mp-prod-desc">{{ prod.description }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="bm-badge bm-badge-info">
+                  <i class="fa-solid fa-tag"></i>
+                  {{ prod.categoryName || getCategoryName(prod.categoryId!) }}
+                </span>
+              </td>
+              <td class="strong">{{ prod.price | number:'1.0-2' }}</td>
+              <td>{{ stockOf(prod) }}</td>
+              <td>
+                <span class="bm-badge" [class.bm-badge-success]="stockOf(prod) > 0" [class.bm-badge-danger]="stockOf(prod) <= 0">
+                  <i class="fa-solid" [class.fa-circle-check]="stockOf(prod) > 0" [class.fa-circle-xmark]="stockOf(prod) <= 0"></i>
+                  {{ stockOf(prod) > 0 ? 'In stock' : 'Out of stock' }}
+                </span>
+              </td>
+              <td class="mp-col-actions">
+                <div class="bm-flex bm-gap-1">
+                  <button type="button" class="bm-btn bm-btn-ghost bm-btn-icon" (click)="openProductModal(prod)"
+                          [disabled]="operationInProgress" aria-label="Edit product">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button type="button" class="bm-btn bm-btn-danger bm-btn-icon" (click)="deleteProduct(prod.id!)"
+                          [disabled]="operationInProgress" aria-label="Delete product">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bm-state" *ngIf="!productsLoading && !filteredProducts().length">
+        <i class="fa-solid fa-box-open"></i>
+        <h3>{{ products.length ? 'No matching products' : 'No products yet' }}</h3>
+        <p>{{ products.length ? 'Try a different search term.' : 'Add your first product to open the store.' }}</p>
+        <button type="button" class="bm-btn bm-btn-primary bm-btn-sm" (click)="openProductModal()">
+          <i class="fa-solid fa-plus"></i> New product
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── Product slide-over ── -->
+  <div class="mp-overlay" *ngIf="showProductModal" (click)="showProductModal = false">
+    <aside class="mp-drawer" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+           aria-labelledby="mpProductTitle">
+      <header class="bm-card-head mp-drawer-head">
+        <h2 class="bm-card-title" id="mpProductTitle">
+          <i class="fa-solid" [class.fa-plus]="!isEditingProduct" [class.fa-pen]="isEditingProduct"></i>
+          {{ isEditingProduct ? 'Edit product' : 'New product' }}
+        </h2>
+        <button type="button" class="bm-btn bm-btn-ghost bm-btn-icon" (click)="showProductModal = false" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+
+      <div class="mp-drawer-body">
+        <div class="bm-field">
+          <label class="bm-label" for="mpName">Product name</label>
+          <input id="mpName" type="text" class="bm-input" placeholder="Product name"
+                 [(ngModel)]="newProduct.name" (ngModelChange)="validateProductForm()" name="name">
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="mpDescription">Description</label>
+          <textarea id="mpDescription" class="bm-textarea" rows="3" placeholder="Short product description"
+                    [(ngModel)]="newProduct.description" (ngModelChange)="validateProductForm()" name="description"></textarea>
+        </div>
+
+        <div class="mp-row">
+          <div class="bm-field">
+            <label class="bm-label" for="mpPrice">Price</label>
+            <input id="mpPrice" type="number" min="0" step="0.01" class="bm-input" placeholder="0.00"
+                   [(ngModel)]="newProduct.price" (ngModelChange)="validateProductForm()" name="price">
+          </div>
+          <div class="bm-field">
+            <label class="bm-label" for="mpQuantity">Stock quantity</label>
+            <input id="mpQuantity" type="number" min="1" step="1" class="bm-input"
+                   [ngModel]="newProduct.quantity"
+                   (ngModelChange)="updateQuantity($event)" name="quantity">
+          </div>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="mpCategory">Category</label>
+          <select id="mpCategory" class="bm-select" [(ngModel)]="newProduct.categoryId"
+                  (ngModelChange)="validateProductForm()" name="categoryId">
+            <option [ngValue]="null" disabled>Select a category…</option>
+            <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="mpReview">Review <span class="bm-muted">(optional)</span></label>
+          <textarea id="mpReview" class="bm-textarea" rows="2" placeholder="Short review note"
+                    [(ngModel)]="newProduct.review" name="review"></textarea>
+        </div>
+
+        <div class="bm-field">
+          <span class="bm-label">Images <span class="bm-muted">(required)</span></span>
+
+          <div class="mp-chips" *ngIf="(newProduct.images?.length ?? 0) + productImagePreviews.length">
+            <span class="bm-chip mp-img-chip" *ngFor="let img of newProduct.images; let i = index">
+              <img [src]="imageUrl(img)" [alt]="'Product image ' + (i + 1)" (error)="onImageError($event)">
+              <button type="button" (click)="removeImageChip(i, true)" aria-label="Remove image">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+            <span class="bm-chip mp-img-chip" *ngFor="let prev of productImagePreviews; let i = index">
+              <img [src]="prev" alt="Selected image preview">
+              <button type="button" (click)="removeImageChip(i, false)" aria-label="Remove image">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          </div>
+
+          <label class="mp-upload" for="mpImages">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Click to select product images</span>
+            <small class="bm-muted">One image is required for new products</small>
+          </label>
+          <input id="mpImages" class="sr-file" type="file" accept="image/*" multiple
+                 (change)="onProductFilesSelected($event)">
+        </div>
+      </div>
+
+      <footer class="mp-drawer-foot">
+        <button type="button" class="bm-btn bm-btn-ghost" (click)="showProductModal = false">Cancel</button>
+        <button type="button" class="bm-btn bm-btn-primary" (click)="saveProduct()"
+                [disabled]="!productFormValid || savingProduct">
+          <ng-container *ngIf="!savingProduct">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>{{ isEditingProduct ? 'Save changes' : 'Create product' }}</span>
+          </ng-container>
+          <ng-container *ngIf="savingProduct">
+            <span class="mp-spinner" aria-hidden="true"></span>
+            <span>Saving…</span>
+          </ng-container>
+        </button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- ── Category slide-over ── -->
+  <div class="mp-overlay" *ngIf="showCategoryModal" (click)="showCategoryModal = false">
+    <aside class="mp-drawer" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+           aria-labelledby="mpCategoryTitle">
+      <header class="bm-card-head mp-drawer-head">
+        <h2 class="bm-card-title" id="mpCategoryTitle">
+          <i class="fa-solid" [class.fa-plus]="!isEditingCategory" [class.fa-pen]="isEditingCategory"></i>
+          {{ isEditingCategory ? 'Edit category' : 'New category' }}
+        </h2>
+        <button type="button" class="bm-btn bm-btn-ghost bm-btn-icon" (click)="showCategoryModal = false" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+
+      <div class="mp-drawer-body">
+        <div class="bm-field">
+          <label class="bm-label" for="catName">Category name</label>
+          <input id="catName" type="text" class="bm-input" placeholder="e.g. Laptops"
+                 [(ngModel)]="newCategory.name" (ngModelChange)="validateCategoryForm()" name="catName">
+        </div>
+        <div class="bm-field">
+          <label class="bm-label" for="catDescription">Description</label>
+          <textarea id="catDescription" class="bm-textarea" rows="3" placeholder="What belongs in this category?"
+                    [(ngModel)]="newCategory.description" (ngModelChange)="validateCategoryForm()" name="catDescription"></textarea>
+        </div>
+      </div>
+
+      <footer class="mp-drawer-foot">
+        <button type="button" class="bm-btn bm-btn-ghost" (click)="showCategoryModal = false">Cancel</button>
+        <button type="button" class="bm-btn bm-btn-primary" (click)="saveCategory()"
+                [disabled]="!categoryFormValid || savingCategory">
+          <ng-container *ngIf="!savingCategory">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>{{ isEditingCategory ? 'Save changes' : 'Create category' }}</span>
+          </ng-container>
+          <ng-container *ngIf="savingCategory">
+            <span class="mp-spinner" aria-hidden="true"></span>
+            <span>Saving…</span>
+          </ng-container>
+        </button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- ── Blocking overlay while a write is in flight ── -->
+  <div class="mp-busy" *ngIf="operationInProgress || autoRefreshPending">
+    <div class="mp-busy-box">
+      <span class="bm-spinner" aria-hidden="true"></span>
+      <p>{{ autoRefreshPending ? 'Refreshing…' : 'Applying changes…' }}</p>
+    </div>
+  </div>
+</div>

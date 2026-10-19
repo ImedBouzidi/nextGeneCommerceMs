@@ -1,0 +1,22 @@
+/* App shell — dark background fills viewport */
+:host {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--bg-dark, #0a0a0f);
+}
+
+.layout {
+    flex: 1;
+}
+
+/* The admin shell owns the full viewport height itself (fixed rail + own topbar),
+   so it must not be squeezed into the flex column alongside the navbar slot. */
+.layout--admin {
+    display: block;
+    min-height: 100vh;
+}
+
+.content {
+    /* allow child components to manage their own max-width */
+}

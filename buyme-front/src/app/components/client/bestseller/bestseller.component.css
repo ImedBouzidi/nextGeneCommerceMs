@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════════════
+   NextGenTech — Bestsellers page
+   ═══════════════════════════════════════════════════════════════ */
+
+.bestseller-page {
+  overflow: hidden;
+}
+
+.bestseller-page::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: -180px;
+  width: 620px;
+  height: 620px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, .14), transparent 65%);
+  pointer-events: none;
+}
+
+.bestseller-page > .bm-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Ranked list ── */
+.bestseller-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bestseller-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 22px 16px 16px;
+}
+
+.bestseller-row.is-top {
+  border-color: var(--border-glow);
+  background: linear-gradient(100deg, rgba(245, 158, 11, .10), var(--bg-card) 55%);
+}
+
+/* ── Rank indicator ── */
+.bestseller-rank {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.bestseller-rank.rank-1 {
+  color: #fde68a;
+  background: rgba(245, 158, 11, .16);
+  border-color: rgba(245, 158, 11, .4);
+}
+.bestseller-rank.rank-2 {
+  color: var(--text-primary);
+  background: rgba(203, 213, 225, .14);
+  border-color: rgba(203, 213, 225, .32);
+}
+.bestseller-rank.rank-3 {
+  color: #fdba74;
+  background: rgba(217, 119, 6, .16);
+  border-color: rgba(217, 119, 6, .36);
+}
+
+/* ── Media ── */
+.bestseller-media {
+  flex: 0 0 auto;
+  display: block;
+  width: 96px;
+  height: 76px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.bestseller-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Info ── */
+.bestseller-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.bestseller-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bestseller-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+.bestseller-name a { color: inherit; }
+.bestseller-name a:hover { color: var(--accent-light); }
+
+.bestseller-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Actions ── */
+.bestseller-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 760px) {
+  .bestseller-row {
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .bestseller-media {
+    width: 100%;
+    height: 170px;
+  }
+
+  .bestseller-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+}

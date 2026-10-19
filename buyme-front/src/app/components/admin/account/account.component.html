@@ -1,0 +1,145 @@
+<div class="bm-page ac">
+  <div class="bm-container">
+
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-user-gear"></i> Account</span>
+        <h1 class="bm-page-title">My account</h1>
+        <p class="bm-page-sub">Your administrator identity, permissions and active session.</p>
+      </div>
+      <div class="bm-flex bm-gap-1">
+        <button type="button" class="bm-btn bm-btn-outline" (click)="loadProfile()" [disabled]="loading">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="bm-state" *ngIf="loading">
+      <span class="bm-spinner" aria-hidden="true"></span>
+      <p>Loading your profile…</p>
+    </div>
+
+    <div class="bm-state is-error" *ngIf="!loading && failed">
+      <i class="fa-solid fa-user-slash"></i>
+      <h3>Profile unavailable</h3>
+      <p>The auth service did not return your account details.</p>
+      <button type="button" class="bm-btn bm-btn-primary bm-btn-sm" (click)="loadProfile()">
+        <i class="fa-solid fa-rotate"></i> Try again
+      </button>
+    </div>
+
+    <ng-container *ngIf="!loading && !failed && profile">
+
+      <!-- ── Identity ────────────────────────────────────────── -->
+      <section class="bm-card ac-identity">
+        <div class="ac-avatar" aria-hidden="true">{{ initials }}</div>
+        <div class="ac-identity-body">
+          <h2 class="ac-identity-name">{{ displayName }}</h2>
+          <p class="ac-identity-email">{{ profile.email }}</p>
+          <div class="ac-tags">
+            @for (role of realmRoles; track role) {
+              <span class="bm-badge"
+                    [class.bm-badge-info]="role === 'ADMIN'"
+                    [class.bm-badge-muted]="role !== 'ADMIN'">
+                {{ role }}
+              </span>
+            }
+          </div>
+        </div>
+        <button type="button" class="bm-btn bm-btn-danger bm-btn-sm ac-signout" (click)="signOut()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Sign out</span>
+        </button>
+      </section>
+
+      <section class="ac-grid">
+
+        <!-- ── Details ─────────────────────────────────────── -->
+        <div class="bm-card ac-panel">
+          <header class="bm-card-head ac-panel-head">
+            <h2 class="bm-card-title"><i class="fa-solid fa-id-card text-accent"></i> Details</h2>
+          </header>
+
+          <dl class="ac-fields">
+            <div class="ac-field">
+              <dt>First name</dt>
+              <dd>{{ profile.firstName || '—' }}</dd>
+            </div>
+            <div class="ac-field">
+              <dt>Last name</dt>
+              <dd>{{ profile.lastName || '—' }}</dd>
+            </div>
+            <div class="ac-field">
+              <dt>Email</dt>
+              <dd class="ac-mono">
+                {{ profile.email || '—' }}
+                <button type="button" class="ac-copy" (click)="copy(profile.email, 'Email')"
+                        aria-label="Copy email">
+                  <i class="fa-solid fa-copy"></i>
+                </button>
+              </dd>
+            </div>
+            <div class="ac-field">
+              <dt>Account ID</dt>
+              <dd class="ac-mono">{{ profile.id ?? '—' }}</dd>
+            </div>
+          </dl>
+
+          <!--
+            The auth service exposes only register / login / me. There is no
+            update-profile endpoint, so these cannot be edited from here yet.
+            Shown read-only rather than as a form that would silently 404.
+          -->
+          <div class="ac-note" *ngIf="hasEmptyProfileFields">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>
+              Editing profile details and changing your password are not available yet —
+              the auth service has no update endpoint for them.
+            </span>
+          </div>
+        </div>
+
+        <!-- ── Session ─────────────────────────────────────── -->
+        <div class="bm-card ac-panel">
+          <header class="bm-card-head ac-panel-head">
+            <h2 class="bm-card-title"><i class="fa-solid fa-clock text-accent"></i> Session</h2>
+          </header>
+
+          <dl class="ac-fields">
+            <div class="ac-field">
+              <dt>Signed in at</dt>
+              <dd>{{ session.issuedAt ? (session.issuedAt | date:'medium') : '—' }}</dd>
+            </div>
+            <div class="ac-field">
+              <dt>Token expires</dt>
+              <dd>
+                {{ session.expiresAt ? (session.expiresAt | date:'medium') : '—' }}
+                <span class="bm-badge" [class.bm-badge-success]="!session.isExpired"
+                      [class.bm-badge-danger]="session.isExpired">
+                  {{ session.isExpired ? 'Expired' : 'Active' }}
+                </span>
+              </dd>
+            </div>
+            <div class="ac-field">
+              <dt>Issuer</dt>
+              <dd class="ac-mono ac-wrap">{{ session.issuer || '—' }}</dd>
+            </div>
+            <div class="ac-field">
+              <dt>Subject</dt>
+              <dd class="ac-mono ac-wrap">{{ session.subject || '—' }}</dd>
+            </div>
+          </dl>
+
+          <div class="ac-note">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>
+              Signing out clears the stored token and cart on this device only.
+              Your password is managed in Keycloak, not here.
+            </span>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</div>

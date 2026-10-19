@@ -1,0 +1,231 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     NextGenTech — Product Detail
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section class="bm-page single-page">
+  <div class="bm-container">
+
+    <!-- ── Breadcrumbs ── -->
+    <nav class="single-crumbs" aria-label="Breadcrumb">
+      <a routerLink="/client/home"><i class="fa-solid fa-house"></i> Home</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <a routerLink="/client/shop"><i class="fa-solid fa-store"></i> Shop</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span class="single-crumb-current">{{ product?.name || 'Product' }}</span>
+    </nav>
+
+    <!-- ── Loading ── -->
+    <div class="bm-state" *ngIf="loading">
+      <div class="bm-spinner"></div>
+      <p>Loading product details…</p>
+    </div>
+
+    <!-- ── Not found / error ── -->
+    <div class="bm-state is-error" *ngIf="!loading && error">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <h3>Product unavailable</h3>
+      <p>{{ error }}</p>
+      <a class="bm-btn bm-btn-primary bm-btn-sm" routerLink="/client/shop">
+        <i class="fa-solid fa-arrow-left"></i> Back to shop
+      </a>
+    </div>
+
+    <!-- ── Not found (no error, no product) ── -->
+    <div class="bm-state" *ngIf="!loading && !error && !product">
+      <i class="fa-solid fa-box-open"></i>
+      <h3>We couldn't find that product</h3>
+      <p>It may have been removed from the catalogue.</p>
+      <a class="bm-btn bm-btn-outline bm-btn-sm" routerLink="/client/shop">
+        <i class="fa-solid fa-store"></i> Browse the shop
+      </a>
+    </div>
+
+    <!-- ── Product ── -->
+    <ng-container *ngIf="!loading && !error && product">
+      <div class="single-layout">
+
+        <!-- ── Gallery ── -->
+        <div class="single-gallery">
+          <div class="single-main bm-card">
+            <img [src]="activeImage || getProductImage(product)"
+                 (error)="onImageError($event)"
+                 (load)="onImageLoaded()"
+                 [alt]="product.name" />
+
+            <span class="bm-badge single-gallery-tag"
+                  *ngIf="product.quantity > 0 && product.quantity <= 5">
+              <i class="fa-solid fa-fire"></i> Only {{ product.quantity }} left
+            </span>
+            <span class="bm-badge bm-badge-danger single-gallery-tag"
+                  *ngIf="product.quantity === 0">Sold out</span>
+          </div>
+
+          <!-- Thumbnail switcher (only when the product has several images) -->
+          <div class="single-thumbs" *ngIf="imageUrls.length > 1">
+            <button type="button"
+                    class="single-thumb bm-card"
+                    *ngFor="let img of imageUrls"
+                    [class.is-active]="(activeImage || imageUrls[0]) === img"
+                    (click)="selectImage(img)">
+              <img [src]="img" (error)="onImageError($event)" [alt]="product.name" loading="lazy" />
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Info ── -->
+        <div class="single-info">
+          <span class="bm-eyebrow" *ngIf="product.categoryName || product.categoryId">
+            <i class="fa-solid fa-tag"></i>
+            {{ product.categoryName || 'Category ' + product.categoryId }}
+          </span>
+
+          <h1 class="single-title">{{ product.name }}</h1>
+
+          <!-- Rating -->
+          <div class="single-rating">
+            <span class="bm-stars">
+              <i class="fa-solid fa-star"
+                 *ngFor="let n of [1,2,3,4,5]"
+                 [class.lit]="(product.rate || 0) >= n"></i>
+            </span>
+            <span class="bm-small bm-muted" *ngIf="product.rate">
+              {{ product.rate | number:'1.1-1' }} · {{ reviews.length }} review{{ reviews.length === 1 ? '' : 's' }}
+            </span>
+            <span class="bm-small bm-muted" *ngIf="!product.rate">No ratings yet</span>
+          </div>
+
+          <!-- Price -->
+          <div class="single-price-row">
+            <ng-container *ngIf="discountPercent > 0; else fullPrice">
+              <span class="bm-small bm-muted single-price-old">
+                <del>{{ product.price | currency }}</del>
+              </span>
+              <span class="single-price bm-gradient">
+                {{ product.price * (1 - discountPercent / 100) | currency }}
+              </span>
+              <span class="bm-badge bm-badge-success">-{{ discountPercent }}%</span>
+            </ng-container>
+            <ng-template #fullPrice>
+              <span class="single-price bm-gradient">{{ product.price != null ? (product.price | currency) : '—' }}</span>
+            </ng-template>
+          </div>
+
+          <!-- Stock -->
+          <div class="single-stock">
+            <span class="bm-badge" [ngClass]="product.quantity > 0 ? 'bm-badge-success' : 'bm-badge-danger'">
+              <i class="fa-solid" [ngClass]="product.quantity > 0 ? 'fa-circle-check' : 'fa-circle-xmark'"></i>
+              {{ product.quantity > 0 ? (product.quantity + ' in stock') : 'Out of stock' }}
+            </span>
+            <span class="bm-small bm-muted" *ngIf="product.id">SKU #{{ product.id }}</span>
+          </div>
+
+          <hr class="bm-divider" />
+
+          <!-- Description -->
+          <p class="single-desc">{{ product.description || 'No description available for this product.' }}</p>
+          <p class="bm-small bm-muted single-extra" *ngIf="product.extraInfo">{{ product.extraInfo }}</p>
+
+          <hr class="bm-divider" />
+
+          <!-- Quantity + add to cart -->
+          <div class="single-buy">
+            <div class="single-qty">
+              <button type="button" class="bm-btn bm-btn-outline bm-btn-icon single-qty-btn"
+                      (click)="decrease()" [disabled]="quantity <= 1" aria-label="Decrease quantity">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <span class="single-qty-value">{{ quantity }}</span>
+              <button type="button" class="bm-btn bm-btn-outline bm-btn-icon single-qty-btn"
+                      (click)="increase()" aria-label="Increase quantity">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+
+            <button type="button" class="bm-btn bm-btn-primary bm-btn-lg single-add"
+                    (click)="addToCart()" [disabled]="product.quantity === 0 || loading">
+              <i class="fa-solid fa-cart-shopping"></i> Add to Cart
+            </button>
+          </div>
+
+          <a class="single-cart-link bm-small" routerLink="/client/cart">
+            <i class="fa-solid fa-cart-shopping"></i> Go to cart
+          </a>
+        </div>
+      </div>
+
+      <!-- ── Rate this product ── -->
+      <section class="bm-card bm-card-pad single-section">
+        <div class="bm-card-head single-section-head">
+          <h2 class="bm-card-title"><i class="fa-solid fa-star"></i> Rate this product</h2>
+        </div>
+
+        <ng-container *ngIf="isAuthenticated; else loginPrompt">
+          <div class="single-rate-row">
+            <span class="bm-stars single-rate-stars">
+              <i class="fa-solid fa-star"
+                 *ngFor="let n of [1,2,3,4,5]"
+                 [class.lit]="selectedRating >= n"
+                 (click)="setRating(n)"></i>
+            </span>
+            <span class="bm-small bm-muted">{{ selectedRating ? selectedRating + ' / 5' : 'Pick a rating' }}</span>
+          </div>
+          <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="submitReview()">
+            <i class="fa-solid fa-paper-plane"></i> Submit Rating
+          </button>
+        </ng-container>
+
+        <ng-template #loginPrompt>
+          <p class="bm-small bm-muted bm-mb-0">
+            <i class="fa-solid fa-lock"></i> Log in to rate this product.
+          </p>
+        </ng-template>
+      </section>
+
+      <!-- ── Reviews ── -->
+      <section class="bm-card bm-card-pad single-section">
+        <div class="bm-card-head single-section-head">
+          <h2 class="bm-card-title">
+            <i class="fa-solid fa-comments"></i>
+            Reviews <span class="bm-badge bm-badge-muted">{{ reviews.length }}</span>
+          </h2>
+        </div>
+
+        <p class="bm-small bm-muted" *ngIf="reviews.length === 0">
+          No reviews yet — be the first to rate this product.
+        </p>
+
+        <div class="single-review" *ngFor="let r of reviews">
+          <div class="single-review-head">
+            <span class="single-review-author">
+              <i class="fa-solid fa-circle-user"></i>
+              {{ r.userName || r.user?.firstName || 'Verified buyer' }}
+            </span>
+            <span class="bm-stars">
+              <i class="fa-solid fa-star" *ngFor="let n of [1,2,3,4,5]" [class.lit]="(r.rating || 0) >= n"></i>
+            </span>
+          </div>
+          <p class="bm-small bm-secondary single-review-body"
+             *ngIf="r.comment || r.review || r.text">{{ r.comment || r.review || r.text }}</p>
+          <span class="bm-small bm-muted" *ngIf="r.createdAt">{{ r.createdAt | date:'mediumDate' }}</span>
+        </div>
+      </section>
+
+      <!-- ── Success modal target (used by showSuccessModal) ── -->
+      <div class="modal fade" id="ratingSuccessModal" tabindex="-1" aria-labelledby="ratingSuccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="ratingSuccessModalLabel">Thank you</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">Your rating has been submitted successfully.</div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</section>

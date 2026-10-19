@@ -1,0 +1,106 @@
+.auth-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 64px);
+  padding: 48px 20px 72px;
+  overflow: hidden;
+}
+
+.auth-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(560px 340px at 50% 18%, var(--glow-a), transparent 70%),
+    radial-gradient(420px 300px at 78% 82%, var(--glow-b), transparent 72%),
+    radial-gradient(360px 260px at 20% 76%, var(--glow-c), transparent 70%);
+}
+
+.auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: 34px 30px 28px;
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  animation: auth-rise 0.38s var(--ease-smooth) both;
+}
+
+@keyframes auth-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.auth-head {
+  margin-bottom: 22px;
+}
+
+.auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.auth-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-violet));
+  color: #fff;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+.auth-brand-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.auth-title {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--text-primary);
+}
+
+.auth-sub {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.auth-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  animation: auth-rise 0.25s var(--ease-smooth) both;
+}
+
+.auth-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--scroll-thumb);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: auth-spin 0.7s linear infinite;
+}
+
+@keyframes auth-spin {
+  to { transform: rotate(360deg); }
+}
+
+.auth-alt {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 26px 20px 22px;
+  }
+}

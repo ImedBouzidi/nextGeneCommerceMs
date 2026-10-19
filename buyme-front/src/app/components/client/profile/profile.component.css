@@ -1,0 +1,135 @@
+/* ═══════════════════════════════════════════════════════════════
+   Profile — dark tech theme
+   ═══════════════════════════════════════════════════════════════ */
+
+:host {
+  display: block;
+}
+
+/* ── Layout ── */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Identity card ── */
+.profile-identity {
+  text-align: center;
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  margin: 4px auto 18px;
+}
+
+.profile-avatar {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-avatar-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-cyan), var(--accent-violet)) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: .85;
+}
+
+.profile-name {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile-email {
+  word-break: break-all;
+}
+
+.profile-quick {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.profile-quick-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.profile-quick-row i {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  width: 14px;
+  text-align: center;
+}
+
+/* ── Details card ── */
+.profile-details .bm-card-head .bm-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-details .bm-card-head .bm-card-title i {
+  color: var(--accent-light);
+}
+
+.profile-group-title {
+  margin: 0 0 16px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profile-value {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 11px 14px;
+  border: 1px solid var(--bg-card-hover);
+  border-radius: var(--radius-md);
+  background: var(--bg-faint);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.profile-field-wide {
+  grid-column: 1 / -1;
+}
+
+.bm-field {
+  margin-bottom: 0;
+}
+
+.profile-details .bm-divider {
+  margin: 22px 0;
+}

@@ -1,0 +1,219 @@
+@let pwValue = registerForm.get('password')?.value || '';
+@let pwScore = pwValue.length >= 16 ? 4 : pwValue.length >= 12 ? 3 : pwValue.length >= 8 ? 2 : pwValue.length > 0 ? 1 : 0;
+@let pwLabel = pwScore === 4 ? 'Strong' : pwScore === 3 ? 'Good' : pwScore === 2 ? 'Fair' : 'Weak';
+
+<div class="reg-shell">
+  <div class="reg-glow" aria-hidden="true"></div>
+
+  <section class="reg-card bm-card" aria-labelledby="regTitle">
+    <header class="reg-head bm-center">
+      <div class="reg-brand">
+        <span class="reg-brand-mark"><i class="fa-solid fa-bolt"></i></span>
+        <span class="reg-brand-text bm-gradient">NextGenTech</span>
+      </div>
+      <h1 id="regTitle" class="reg-title">Create your account</h1>
+      <p class="reg-sub bm-muted">Step {{ currentStep }} of {{ totalSteps }} — join the NextGenTech marketplace in seconds.</p>
+    </header>
+
+    <ol class="steps" [attr.aria-label]="'Registration progress, step ' + currentStep + ' of ' + totalSteps">
+      <li *ngFor="let step of [1, 2, 3]"
+          class="step"
+          [class.done]="currentStep > step"
+          [class.active]="currentStep === step">
+        <span class="step-dot">
+          <i *ngIf="currentStep > step" class="fa-solid fa-check"></i>
+          <ng-container *ngIf="currentStep <= step">{{ step }}</ng-container>
+        </span>
+        <span class="step-label">{{ step === 1 ? 'About you' : step === 2 ? 'Security' : 'Location' }}</span>
+      </li>
+    </ol>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
+
+      <!-- STEP 1 — identity -->
+      <div *ngIf="currentStep === 1">
+        <div class="row">
+          <div class="col">
+            <div class="bm-field">
+              <label class="bm-label" for="firstName">First name</label>
+              <div class="bm-input-group">
+                <i class="fa-solid fa-user"></i>
+                <input id="firstName" type="text" class="bm-input" formControlName="firstName"
+                       placeholder="Jane" autocomplete="given-name" required>
+              </div>
+              <p class="bm-hint" *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid">
+                First name is required.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="bm-field">
+              <label class="bm-label" for="lastName">Last name</label>
+              <div class="bm-input-group">
+                <i class="fa-solid fa-user"></i>
+                <input id="lastName" type="text" class="bm-input" formControlName="lastName"
+                       placeholder="Doe" autocomplete="family-name" required>
+              </div>
+              <p class="bm-hint" *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid">
+                Last name is required.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="dob">Date of birth <span class="bm-muted">(optional)</span></label>
+          <div class="bm-input-group">
+            <i class="fa-solid fa-calendar"></i>
+            <input id="dob" type="date" class="bm-input" formControlName="dob">
+          </div>
+        </div>
+
+        <div class="bm-field">
+          <span class="bm-label">Profile picture <span class="bm-muted">(optional)</span></span>
+          <label class="upload" for="profilePic">
+            <img *ngIf="profilePreview" class="upload-preview" [src]="profilePreview" alt="Profile preview">
+            <span *ngIf="!profilePreview" class="upload-icon"><i class="fa-solid fa-image"></i></span>
+            <span class="upload-text">
+              <strong>{{ selectedProfileFile ? selectedProfileFile.name : 'Choose an image' }}</strong>
+              <small class="bm-muted">PNG or JPG, square crop looks best</small>
+            </span>
+          </label>
+          <input id="profilePic" class="sr-file" type="file" accept="image/*" (change)="onFileSelected($event)">
+        </div>
+      </div>
+
+      <!-- STEP 2 — credentials -->
+      <div *ngIf="currentStep === 2">
+        <div class="bm-field">
+          <label class="bm-label" for="email">Email</label>
+          <div class="bm-input-group">
+            <i class="fa-solid fa-envelope"></i>
+            <input id="email" type="email" class="bm-input" formControlName="email"
+                   placeholder="you@example.com" autocomplete="email" required>
+          </div>
+          <p class="bm-hint" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
+            A valid email address is required.
+          </p>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="password">Password</label>
+          <div class="bm-input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input id="password" type="password" class="bm-input" formControlName="password"
+                   placeholder="At least 8 characters" autocomplete="new-password" required>
+          </div>
+
+          <ng-container *ngIf="registerForm.get('password')?.value">
+            <div class="meter" [attr.aria-label]="'Password length strength'">
+              <span class="meter-bar"><span class="meter-fill" [class.s1]="pwScore === 1" [class.s2]="pwScore === 2"
+                    [class.s3]="pwScore === 3" [class.s4]="pwScore === 4"></span></span>
+              <span class="meter-text">{{ pwLabel }}</span>
+            </div>
+          </ng-container>
+          <p class="bm-hint" *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid">
+            Password must be at least 8 characters long.
+          </p>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="matchingPassword">Confirm password</label>
+          <div class="bm-input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input id="matchingPassword" type="password" class="bm-input" formControlName="matchingPassword"
+                   placeholder="Repeat your password" autocomplete="new-password" required>
+          </div>
+          <p class="bm-hint" *ngIf="registerForm.get('matchingPassword')?.touched && registerForm.hasError('passwordMismatch')">
+            Passwords do not match.
+          </p>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="phone">Phone <span class="bm-muted">(optional)</span></label>
+          <div class="bm-input-group">
+            <i class="fa-solid fa-phone"></i>
+            <input id="phone" type="tel" class="bm-input" formControlName="phone"
+                   placeholder="+1 555 010 1234" autocomplete="tel">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 — location + terms -->
+      <div *ngIf="currentStep === 3">
+        <div class="bm-field">
+          <label class="bm-label" for="country">Country <span class="bm-muted">(optional)</span></label>
+          <div class="bm-input-group">
+            <i class="fa-solid fa-globe"></i>
+            <input id="country" type="text" class="bm-input" formControlName="country"
+                   placeholder="Tunisia" autocomplete="country-name">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <div class="bm-field">
+              <label class="bm-label" for="city">City <span class="bm-muted">(optional)</span></label>
+              <input id="city" type="text" class="bm-input" formControlName="city" placeholder="Tunis" autocomplete="address-level2">
+            </div>
+          </div>
+          <div class="col">
+            <div class="bm-field">
+              <label class="bm-label" for="zip">Zip code <span class="bm-muted">(optional)</span></label>
+              <input id="zip" type="text" class="bm-input" formControlName="zip" placeholder="1000" autocomplete="postal-code">
+            </div>
+          </div>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="address">Shipping address <span class="bm-muted">(optional)</span></label>
+          <textarea id="address" class="bm-textarea" rows="3" formControlName="address"
+                    placeholder="Street, building, floor" autocomplete="street-address"></textarea>
+        </div>
+
+        <label class="bm-check reg-terms">
+          <input type="checkbox" [formControl]="termsControl">
+          <span>I accept the terms of service and privacy policy</span>
+        </label>
+        <p class="bm-hint" *ngIf="termsControl.touched && termsControl.invalid">
+          You must accept the terms to continue.
+        </p>
+      </div>
+
+      <div *ngIf="message" class="reg-msg" [class.ok]="messageType === 'success'" [class.bad]="messageType === 'error'" role="status">
+        <i class="fa-solid" [class.fa-circle-check]="messageType === 'success'" [class.fa-triangle-exclamation]="messageType !== 'success'"></i>
+        <span>{{ message }}</span>
+      </div>
+
+      <div class="reg-actions">
+        <button type="button" class="bm-btn bm-btn-ghost" (click)="previousStep()" [disabled]="currentStep === 1 || isSubmitting">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Back</span>
+        </button>
+
+        <button *ngIf="currentStep < totalSteps" type="button" class="bm-btn bm-btn-primary" (click)="nextStep()">
+          <span>Next</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <button *ngIf="currentStep === totalSteps" type="submit" class="bm-btn bm-btn-primary" [disabled]="isSubmitting">
+          <ng-container *ngIf="!isSubmitting">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Create account</span>
+          </ng-container>
+          <ng-container *ngIf="isSubmitting">
+            <span class="reg-spinner" aria-hidden="true"></span>
+            <span>Creating account…</span>
+          </ng-container>
+        </button>
+      </div>
+    </form>
+
+    <hr class="bm-divider">
+
+    <p class="reg-alt bm-center bm-small bm-muted">
+      Already have an account?
+      <a routerLink="/login">Sign in</a>
+    </p>
+  </section>
+</div>

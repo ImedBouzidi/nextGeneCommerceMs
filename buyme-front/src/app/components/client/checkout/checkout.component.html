@@ -1,0 +1,207 @@
+<section class="bm-page">
+  <div class="bm-container">
+
+    <!-- ── Page head ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow">
+          <i class="fa-solid fa-shield-halved"></i> Secure checkout
+        </span>
+        <h1 class="bm-page-title">Complete your <span class="bm-gradient">order</span></h1>
+        <p class="bm-page-sub">Confirm your delivery details and payment method, then place the order.</p>
+      </div>
+      <a class="bm-btn bm-btn-ghost" routerLink="/client/cart">
+        <i class="fa-solid fa-arrow-left"></i> Back to cart
+      </a>
+    </header>
+
+    <div class="checkout-layout" *ngIf="items$ | async as items">
+
+      <!-- ═══ Left: form ═══ -->
+      <form class="checkout-form" (ngSubmit)="placeOrders()">
+
+        <!-- Delivery -->
+        <div class="bm-card bm-mb-2">
+          <div class="bm-card-head">
+            <h2 class="bm-card-title">
+              <i class="fa-solid fa-truck-fast me-2 text-accent"></i>Delivery details
+            </h2>
+          </div>
+
+          <div class="bm-card-pad">
+            <div class="bm-field">
+              <label class="bm-label" for="ck-mobile">Mobile number <span class="text-danger-soft">*</span></label>
+              <div class="bm-input-group">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <input id="ck-mobile" class="bm-input" type="tel" name="mobile" inputmode="numeric"
+                       placeholder="e.g. +216 20 123 456" [(ngModel)]="mobile" #mobileModel="ngModel" required>
+              </div>
+              <p class="bm-hint">We'll use this number to confirm the delivery of your order.</p>
+              <p class="ck-error" *ngIf="mobileModel.invalid && mobileModel.touched">
+                <i class="fa-solid fa-circle-exclamation"></i> A mobile number is required.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment method -->
+        <div class="bm-card bm-mb-2">
+          <div class="bm-card-head">
+            <h2 class="bm-card-title">
+              <i class="fa-solid fa-credit-card me-2 text-accent"></i>Payment method
+            </h2>
+          </div>
+
+          <div class="bm-card-pad">
+            <!-- Payment methods. The Tunisian instruments come first: they are what most
+                 customers here hold, and the only ones a local facilitator can
+                 actually process. -->
+            <div class="pay-options">
+              <label class="pay-option" [class.active]="paymentMethod === 'COD'">
+                <input type="radio" name="paymentMethod" value="COD" [(ngModel)]="paymentMethod"
+                       (ngModelChange)="onPaymentMethodChange()">
+                <i class="fa-solid fa-money-bill-wave"></i>
+                <span>
+                  <strong>Cash on delivery</strong>
+                  <small class="bm-muted">Pay when you receive your items</small>
+                </span>
+              </label>
+
+              <label class="pay-option" [class.active]="paymentMethod === 'EDINAR'">
+                <input type="radio" name="paymentMethod" value="EDINAR" [(ngModel)]="paymentMethod"
+                       (ngModelChange)="onPaymentMethodChange()">
+                <i class="fa-solid fa-envelope-open-text"></i>
+                <span>
+                  <strong>e-Dinar</strong>
+                  <small class="bm-muted">Poste Tunisienne card or account</small>
+                </span>
+              </label>
+
+              <label class="pay-option" [class.active]="paymentMethod === 'D17'">
+                <input type="radio" name="paymentMethod" value="D17" [(ngModel)]="paymentMethod"
+                       (ngModelChange)="onPaymentMethodChange()">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <span>
+                  <strong>D17</strong>
+                  <small class="bm-muted">D17 / La Poste wallet</small>
+                </span>
+              </label>
+
+              <label class="pay-option" [class.active]="paymentMethod === 'CLICTOPAY'">
+                <input type="radio" name="paymentMethod" value="CLICTOPAY" [(ngModel)]="paymentMethod"
+                       (ngModelChange)="onPaymentMethodChange()">
+                <i class="fa-solid fa-credit-card"></i>
+                <span>
+                  <strong>ClicToPay</strong>
+                  <small class="bm-muted">Société Monétique de Tunisie cards</small>
+                </span>
+              </label>
+
+              <label class="pay-option" [class.active]="paymentMethod === 'WALLET'">
+                <input type="radio" name="paymentMethod" value="WALLET" [(ngModel)]="paymentMethod"
+                       (ngModelChange)="onPaymentMethodChange()">
+                <i class="fa-solid fa-wallet"></i>
+                <span>
+                  <strong>Mobile wallet</strong>
+                  <small class="bm-muted">Local mobile payment</small>
+                </span>
+              </label>
+
+              <label class="pay-option" [class.active]="paymentMethod === 'CARD'">
+                <input type="radio" name="paymentMethod" value="CARD" [(ngModel)]="paymentMethod"
+                       (ngModelChange)="onPaymentMethodChange()">
+                <i class="fa-solid fa-globe"></i>
+                <span>
+                  <strong>International card</strong>
+                  <small class="bm-muted">
+                    {{ cardPaymentsAvailable ? 'Visa / Mastercard issued abroad' : 'Test mode — simulated issuer' }}
+                  </small>
+                </span>
+              </label>
+            </div>
+
+            <!-- Card details: Stripe's iframe in production, a local simulator without a key -->
+            <div class="card-fields" *ngIf="paymentMethod === 'CARD'">
+              <hr class="bm-divider">
+              <app-card-field #cardField
+                              [visible]="true"
+                              (outcomeChange)="simulatedOutcome = $event"
+                              (validityChange)="cardReady = $event">
+              </app-card-field>
+            </div>
+
+            <!-- Domestic instruments: no card form, the provider's checkout collects them -->
+            <div class="card-fields" *ngIf="isDomestic(paymentMethod)">
+              <hr class="bm-divider">
+              <p class="ck-note ck-domestic-note">
+                <i class="fa-solid fa-circle-info"></i>
+                You will be taken to
+                <strong>{{ methodLabel(paymentMethod) }}</strong> to complete the payment securely.
+                Your order is only confirmed once the payment succeeds.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button class="bm-btn bm-btn-primary bm-btn-lg bm-btn-block place-btn" type="submit"
+                [disabled]="processing">
+          <ng-container *ngIf="!processing">
+            <i class="fa-solid fa-lock"></i> Place order
+          </ng-container>
+          <ng-container *ngIf="processing">
+            <span class="btn-spinner"></span> {{ statusMessage || 'Processing…' }}
+          </ng-container>
+        </button>
+
+        <p class="bm-hint bm-center ck-note">
+          <i class="fa-solid fa-circle-info"></i>
+          Your details are encrypted and never stored on this device.
+        </p>
+      </form>
+
+      <!-- ═══ Right: order summary ═══ -->
+      <aside class="summary bm-card bm-card-pad">
+        <h2 class="bm-card-title bm-mb-2">
+          <i class="fa-solid fa-receipt me-2 text-accent"></i>Order summary
+        </h2>
+
+        <ul class="sum-list" *ngIf="items.length > 0; else emptyCart">
+          <li class="sum-item" *ngFor="let item of items">
+            <span class="sum-thumb">
+              <img src="/assets/img/product-placeholder.svg" [alt]="'Product ' + item.productId">
+              <span class="sum-qty">{{ item.quantity }}</span>
+            </span>
+            <span class="sum-name">Product #{{ item.productId }}</span>
+            <span class="sum-line">{{ item.price * item.quantity | currency:'USD':'symbol':'1.2-2' }}</span>
+          </li>
+        </ul>
+
+        <ng-template #emptyCart>
+          <p class="bm-muted bm-small">No items in your cart yet.</p>
+        </ng-template>
+
+        <hr class="bm-divider">
+
+        <div class="sum-row">
+          <span class="bm-secondary">Subtotal</span>
+          <span>{{ getSubtotal(items) | currency:'USD':'symbol':'1.2-2' }}</span>
+        </div>
+
+        <div class="sum-row" *ngIf="getDiscountPercent() > 0">
+          <span class="bm-secondary">
+            Discount <span class="bm-badge bm-badge-success">{{ getDiscountPercent() }}%</span>
+          </span>
+          <span class="text-success-amount">
+            &minus;{{ (getSubtotal(items) * getDiscountPercent() / 100) | currency:'USD':'symbol':'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="sum-row sum-grand">
+          <span>Total</span>
+          <span class="bm-price">{{ getTotalWithDiscount(items) | currency:'USD':'symbol':'1.2-2' }}</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>

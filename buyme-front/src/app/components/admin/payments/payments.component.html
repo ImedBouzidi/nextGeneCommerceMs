@@ -1,0 +1,104 @@
+<div class="bm-page ap">
+  <div class="bm-container">
+
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-shield-halved"></i> Admin</span>
+        <h1 class="bm-page-title">Payments</h1>
+        <p class="bm-page-sub">Transaction history across the store. Read-only.</p>
+      </div>
+      <div class="bm-flex bm-gap-1">
+        <button type="button" class="bm-btn bm-btn-outline" (click)="load()" [disabled]="loading">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="ap-sums" *ngIf="!loading && !failed && payments.length">
+      <div class="ap-sum">
+        <span class="ap-sum-label">Transactions</span>
+        <span class="ap-sum-value">{{ payments.length }}</span>
+      </div>
+      <div class="ap-sum">
+        <span class="ap-sum-label">Paid total</span>
+        <span class="ap-sum-value">{{ paidTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="ap-sum">
+        <span class="ap-sum-label">Failed</span>
+        <span class="ap-sum-value">{{ failedCount }}</span>
+      </div>
+    </div>
+
+    <div class="bm-card ap-toolbar" *ngIf="!failed">
+      <div class="bm-input-group ap-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" class="bm-input" placeholder="Search by id, order, method or status…"
+               [(ngModel)]="searchTerm" name="paySearch">
+      </div>
+    </div>
+
+    <div class="bm-state" *ngIf="loading">
+      <span class="bm-spinner" aria-hidden="true"></span>
+      <p>Loading payments…</p>
+    </div>
+
+    <div class="bm-state is-error" *ngIf="!loading && failed">
+      <i class="fa-solid fa-plug-circle-xmark"></i>
+      <h3>Payments unavailable</h3>
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="bm-btn bm-btn-primary bm-btn-sm" (click)="load()">
+        <i class="fa-solid fa-rotate"></i> Try again
+      </button>
+    </div>
+
+    <div class="bm-table-wrap" *ngIf="!loading && !failed && filtered.length">
+      <table class="bm-table">
+        <thead>
+          <tr>
+            <th>Payment</th>
+            <th>Order</th>
+            <th>Method</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Transaction</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pay of filtered; track pay.id) {
+            <tr>
+              <td class="strong">#{{ pay.id }}</td>
+              <td>#{{ pay.orderId }}</td>
+              <td>
+                <span class="bm-badge bm-badge-muted">{{ pay.paymentMethod || '—' }}</span>
+              </td>
+              <td class="strong">{{ pay.amount != null ? (pay.amount | number:'1.2-2') : '—' }}</td>
+              <td>
+                <span class="bm-badge"
+                      [class.bm-badge-success]="tone(pay.paymentStatus) === 'ok'"
+                      [class.bm-badge-danger]="tone(pay.paymentStatus) === 'bad'"
+                      [class.bm-badge-warn]="tone(pay.paymentStatus) === 'warn'"
+                      [class.bm-badge-muted]="tone(pay.paymentStatus) === 'muted'">
+                  {{ pay.paymentStatus || 'UNKNOWN' }}
+                </span>
+              </td>
+              <td class="ap-txn">{{ pay.transactionId || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bm-state" *ngIf="!loading && !failed && !payments.length">
+      <i class="fa-solid fa-credit-card"></i>
+      <h3>No payments recorded</h3>
+      <p>Transactions appear here once customers check out.</p>
+    </div>
+
+    <div class="bm-state" *ngIf="!loading && !failed && payments.length && !filtered.length">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <h3>No matching payments</h3>
+      <p>Try a different search term.</p>
+    </div>
+  </div>
+</div>

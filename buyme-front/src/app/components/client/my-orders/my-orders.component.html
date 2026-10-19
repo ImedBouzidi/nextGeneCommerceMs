@@ -1,0 +1,168 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     NextGenTech — My Orders
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section class="bm-page orders-page">
+  <div class="bm-container">
+
+    <!-- ── Page header ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-box"></i> Orders</span>
+        <h1 class="bm-page-title">My <span class="bm-gradient">Orders</span></h1>
+        <p class="bm-page-sub">Track, cancel or remove the orders you have placed.</p>
+      </div>
+      <a class="bm-btn bm-btn-outline bm-btn-sm" routerLink="/client/shop">
+        <i class="fa-solid fa-store"></i> Continue shopping
+      </a>
+    </header>
+
+    <!-- ── Summary strip ── -->
+    <div class="orders-summary bm-card bm-card-pad">
+      <div class="orders-summary-item">
+        <i class="fa-solid fa-receipt"></i>
+        <span class="orders-summary-num">{{ orders.length }}</span>
+        <span class="orders-summary-label">Total order{{ orders.length === 1 ? '' : 's' }}</span>
+      </div>
+      <div class="orders-summary-item">
+        <i class="fa-solid fa-hourglass-half"></i>
+        <span class="orders-summary-num">{{ pendingCount }}</span>
+        <span class="orders-summary-label">Pending</span>
+      </div>
+      <div class="orders-summary-item">
+        <i class="fa-solid fa-truck-fast"></i>
+        <span class="orders-summary-num">{{ deliveredCount }}</span>
+        <span class="orders-summary-label">Delivered</span>
+      </div>
+    </div>
+
+    <!-- ── Error ── -->
+    <div class="bm-alert orders-alert" *ngIf="!loading && error">
+      <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+    </div>
+
+    <!-- ── Loading ── -->
+    <div class="bm-state" *ngIf="loading">
+      <div class="bm-spinner"></div>
+      <p>Loading your orders…</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <!-- ── Empty state ── -->
+      <div class="bm-state bm-card" *ngIf="orders.length === 0">
+        <i class="fa-solid fa-box-open"></i>
+        <h3>No orders yet</h3>
+        <p>When you place an order it will show up here with its status and details.</p>
+        <a class="bm-btn bm-btn-primary bm-btn-sm" routerLink="/client/shop">
+          <i class="fa-solid fa-cart-shopping"></i> Start shopping
+        </a>
+      </div>
+
+      <ng-container *ngIf="orders.length > 0">
+        <!-- ── Orders (desktop table) ── -->
+        <div class="bm-table-wrap orders-table-wrap">
+          <table class="bm-table orders-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Placed</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th class="orders-th-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let o of pagedOrders">
+                <td class="strong">#{{ getOrderId(o) }}</td>
+                <td>{{ o.orderDate | date:'mediumDate' }}</td>
+                <td class="strong">#{{ o.productId }}</td>
+                <td>{{ o.qteOrdered }}</td>
+                <td>
+                  <span class="bm-badge bm-badge-muted">
+                    <i class="fa-solid" [ngClass]="o.paymentMethod === 'COD' ? 'fa-money-bill-wave' : 'fa-credit-card'"></i>
+                    {{ getPaymentMethodDisplay(o.paymentMethod) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="bm-badge" [ngClass]="statusBadge(o.status)">
+                    <i class="fa-solid" [ngClass]="statusIcon(o.status)"></i>
+                    {{ o.status || 'UNKNOWN' }}
+                  </span>
+                </td>
+                <td class="orders-actions-cell">
+                  <button type="button" class="bm-btn bm-btn-ghost bm-btn-sm"
+                          *ngIf="o.status === 'PENDING'"
+                          [disabled]="loading"
+                          (click)="cancelOrder(o)">
+                    <i class="fa-solid fa-ban"></i> Cancel
+                  </button>
+                  <button type="button" class="bm-btn bm-btn-danger bm-btn-sm"
+                          [disabled]="loading"
+                          (click)="deleteOrder(o)">
+                    <i class="fa-solid fa-trash"></i> Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Orders (mobile cards) ── -->
+        <div class="orders-cards">
+          <article class="bm-card bm-card-pad order-card" *ngFor="let o of pagedOrders">
+            <div class="bm-between order-card-head">
+              <h3 class="order-card-title">Order #{{ getOrderId(o) }}</h3>
+              <span class="bm-badge" [ngClass]="statusBadge(o.status)">{{ o.status || 'UNKNOWN' }}</span>
+            </div>
+
+            <div class="order-card-meta bm-small bm-muted">
+              <span><i class="fa-solid fa-calendar"></i> {{ o.orderDate | date:'medium' }}</span>
+              <span><i class="fa-solid fa-cube"></i> Product #{{ o.productId }}</span>
+              <span><i class="fa-solid fa-hashtag"></i> Qty {{ o.qteOrdered }}</span>
+              <span><i class="fa-solid fa-credit-card"></i> {{ getPaymentMethodDisplay(o.paymentMethod) }}</span>
+            </div>
+
+            <div class="order-card-foot">
+              <button type="button" class="bm-btn bm-btn-ghost bm-btn-sm"
+                      *ngIf="o.status === 'PENDING'"
+                      [disabled]="loading"
+                      (click)="cancelOrder(o)">
+                <i class="fa-solid fa-ban"></i> Cancel
+              </button>
+              <button type="button" class="bm-btn bm-btn-danger bm-btn-sm"
+                      [disabled]="loading"
+                      (click)="deleteOrder(o)">
+                <i class="fa-solid fa-trash"></i> Delete
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <!-- ── Pagination ── -->
+        <nav class="orders-pager" *ngIf="totalPages > 1" aria-label="Orders pagination">
+          <button type="button" class="bm-btn bm-btn-outline bm-btn-sm"
+                  [disabled]="currentPage === 1"
+                  (click)="changePage(currentPage - 1)">
+            <i class="fa-solid fa-chevron-left"></i> Prev
+          </button>
+
+          <button type="button" class="bm-btn bm-btn-sm"
+                  *ngFor="let p of pagesArray()"
+                  [ngClass]="p === currentPage ? 'bm-btn-primary' : 'bm-btn-ghost'"
+                  (click)="changePage(p)">
+            {{ p }}
+          </button>
+
+          <button type="button" class="bm-btn bm-btn-outline bm-btn-sm"
+                  [disabled]="currentPage === totalPages"
+                  (click)="changePage(currentPage + 1)">
+            Next <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </nav>
+      </ng-container>
+    </ng-container>
+
+  </div>
+</section>

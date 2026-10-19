@@ -1,0 +1,82 @@
+<div class="as-shell" [class.as-sidebar-open]="sidebarOpen">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
+  <aside class="as-sidebar" role="navigation" aria-label="Admin sections">
+    <div class="as-brand">
+      <span class="as-brand-mark" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
+      <span class="as-brand-text">
+        <strong>BuyMe</strong>
+        <small>Admin console</small>
+      </span>
+    </div>
+
+    <nav class="as-nav">
+      <span class="as-nav-label">Sections</span>
+      @for (item of navItems; track item.path) {
+        <a class="as-nav-item"
+           [routerLink]="item.path"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }">
+          <span class="as-nav-icon" aria-hidden="true"><i class="fa-solid" [class]="item.icon"></i></span>
+          <span class="as-nav-body">
+            <span class="as-nav-title">{{ item.label }}</span>
+            <span class="as-nav-hint">{{ item.hint }}</span>
+          </span>
+        </a>
+      }
+    </nav>
+
+    <div class="as-sidebar-foot">
+      <a class="as-nav-item"
+         [routerLink]="accountItem.path"
+         routerLinkActive="is-active"
+         [routerLinkActiveOptions]="{ exact: true }">
+        <span class="as-nav-icon" aria-hidden="true"><i class="fa-solid" [class]="accountItem.icon"></i></span>
+        <span class="as-nav-body">
+          <span class="as-nav-title">{{ accountItem.label }}</span>
+          <span class="as-nav-hint">{{ accountItem.hint }}</span>
+        </span>
+      </a>
+
+      <a class="as-nav-item as-nav-item--muted" routerLink="/client/home">
+        <span class="as-nav-icon" aria-hidden="true"><i class="fa-solid fa-store"></i></span>
+        <span class="as-nav-body">
+          <span class="as-nav-title">View storefront</span>
+          <span class="as-nav-hint">See the shop as a customer</span>
+        </span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Scrim for the mobile drawer -->
+  <div class="as-scrim" *ngIf="sidebarOpen" (click)="closeSidebar()" aria-hidden="true"></div>
+
+  <!-- ── Main column ─────────────────────────────────────────── -->
+  <div class="as-main">
+    <header class="as-topbar">
+      <button type="button" class="as-burger" (click)="toggleSidebar()"
+              [attr.aria-expanded]="sidebarOpen" aria-label="Toggle navigation">
+        <i class="fa-solid" [class.fa-bars]="!sidebarOpen" [class.fa-xmark]="sidebarOpen"></i>
+      </button>
+
+      <div class="as-topbar-id">
+        <span class="as-topbar-role">Administrator</span>
+        <span class="as-topbar-user">{{ adminName }}</span>
+      </div>
+
+      <div class="as-topbar-actions">
+        <a class="as-icon-btn" routerLink="/client/home" title="View storefront" aria-label="View storefront">
+          <i class="fa-solid fa-store"></i>
+        </a>
+        <button type="button" class="as-icon-btn as-icon-btn--danger" (click)="logout()"
+                title="Sign out" aria-label="Sign out">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="as-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

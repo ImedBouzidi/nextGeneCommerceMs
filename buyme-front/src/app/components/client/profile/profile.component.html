@@ -1,0 +1,155 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     NextGenTech — Profile
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section class="bm-page profile-page">
+  <div class="bm-container">
+
+    <!-- ── Page header ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-user"></i> Account</span>
+        <h1 class="bm-page-title">My <span class="bm-gradient">Profile</span></h1>
+        <p class="bm-page-sub">Your personal and contact details as stored in your NextGenTech account.</p>
+      </div>
+      <button type="button" class="bm-btn bm-btn-ghost bm-btn-sm" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i> Back to home
+      </button>
+    </header>
+
+    <!-- ── Loading ── -->
+    <div class="bm-state" *ngIf="loading">
+      <div class="bm-spinner"></div>
+      <p>Loading your profile…</p>
+    </div>
+
+    <!-- ── Error ── -->
+    <div class="bm-state is-error" *ngIf="!loading && error">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <h3>Couldn't load your profile</h3>
+      <p>{{ error }}</p>
+      <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i> Back to home
+      </button>
+    </div>
+
+    <!-- ── No profile returned (service swallows the failure) ── -->
+    <div class="bm-state" *ngIf="!loading && !error && !userProfile">
+      <i class="fa-solid fa-user-slash"></i>
+      <h3>No profile found</h3>
+      <p>We couldn't find a profile for this account. It may not be signed in yet.</p>
+      <div class="bm-flex bm-gap-1 bm-wrap" style="justify-content:center">
+        <a class="bm-btn bm-btn-primary bm-btn-sm" routerLink="/login">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign in
+        </a>
+        <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="goBack()">
+          <i class="fa-solid fa-arrow-left"></i> Back to home
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Profile ── -->
+    <ng-container *ngIf="!loading && !error && userProfile">
+      <div class="profile-layout">
+
+        <!-- Avatar / identity card -->
+        <aside class="bm-card bm-card-pad profile-identity">
+          <div class="profile-avatar-wrap">
+            <img class="profile-avatar" [src]="avatarUrl" alt="Profile picture" />
+            <span class="profile-avatar-ring"></span>
+          </div>
+
+          <h2 class="profile-name">
+            {{ userProfile.firstName || 'Anonymous' }} {{ userProfile.lastName }}
+          </h2>
+          <p class="bm-small bm-muted bm-mb-0 profile-email">{{ userProfile.email || 'No email on file' }}</p>
+
+          <span class="bm-badge bm-badge-info bm-mt-2">
+            <i class="fa-solid fa-id-badge"></i> Client account
+          </span>
+
+          <hr class="bm-divider" />
+
+          <div class="profile-quick">
+            <div class="profile-quick-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span>{{ userProfile.dob ? (userProfile.dob | date:'longDate') : 'Date of birth not set' }}</span>
+            </div>
+            <div class="profile-quick-row">
+              <i class="fa-solid fa-phone"></i>
+              <span>{{ userProfile.phone || 'Phone not set' }}</span>
+            </div>
+            <div class="profile-quick-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span>{{ userProfile.city || userProfile.country || 'Location not set' }}</span>
+            </div>
+          </div>
+
+          <button type="button" class="bm-btn bm-btn-primary bm-btn-block bm-mt-2" (click)="editProfile()">
+            <i class="fa-solid fa-pen"></i> Edit Profile
+          </button>
+          <button type="button" class="bm-btn bm-btn-ghost bm-btn-block bm-mt-1" (click)="goBack()">
+            <i class="fa-solid fa-arrow-left"></i> Back to Home
+          </button>
+        </aside>
+
+        <!-- Details card -->
+        <div class="bm-card profile-details">
+          <div class="bm-card-head">
+            <h2 class="bm-card-title"><i class="fa-solid fa-address-card"></i> Account details</h2>
+            <span class="bm-small bm-muted">Read-only view</span>
+          </div>
+
+          <div class="bm-card-pad">
+            <h3 class="profile-group-title">Personal information</h3>
+            <div class="bm-grid bm-grid-2">
+              <div class="bm-field">
+                <label class="bm-label">First name</label>
+                <div class="profile-value">{{ userProfile.firstName || 'Not provided' }}</div>
+              </div>
+              <div class="bm-field">
+                <label class="bm-label">Last name</label>
+                <div class="profile-value">{{ userProfile.lastName || 'Not provided' }}</div>
+              </div>
+              <div class="bm-field">
+                <label class="bm-label">Email</label>
+                <div class="profile-value">{{ userProfile.email || 'Not provided' }}</div>
+              </div>
+              <div class="bm-field">
+                <label class="bm-label">Date of birth</label>
+                <div class="profile-value">{{ userProfile.dob ? (userProfile.dob | date:'longDate') : 'Not provided' }}</div>
+              </div>
+            </div>
+
+            <hr class="bm-divider" />
+
+            <h3 class="profile-group-title">Contact information</h3>
+            <div class="bm-grid bm-grid-2">
+              <div class="bm-field">
+                <label class="bm-label">Phone number</label>
+                <div class="profile-value">{{ userProfile.phone || 'Not provided' }}</div>
+              </div>
+              <div class="bm-field">
+                <label class="bm-label">Country</label>
+                <div class="profile-value">{{ userProfile.country || 'Not provided' }}</div>
+              </div>
+              <div class="bm-field">
+                <label class="bm-label">City</label>
+                <div class="profile-value">{{ userProfile.city || 'Not provided' }}</div>
+              </div>
+              <div class="bm-field">
+                <label class="bm-label">ZIP code</label>
+                <div class="profile-value">{{ userProfile.zip || 'Not provided' }}</div>
+              </div>
+              <div class="bm-field profile-field-wide">
+                <label class="bm-label">Address</label>
+                <div class="profile-value">{{ userProfile.address || 'Not provided' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</section>

@@ -1,0 +1,83 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     NextGenTech — Bestsellers
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section class="bm-page bestseller-page">
+  <div class="bm-container">
+
+    <!-- ── Page header ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-trophy"></i> Customer favourites</span>
+        <h1 class="bm-page-title">This week's <span class="bm-gradient">Bestsellers</span></h1>
+        <p class="bm-page-sub">
+          Ranked by customer rating — the products our shoppers keep coming back for.
+        </p>
+      </div>
+      <a routerLink="/client/shop" class="bm-btn bm-btn-outline bm-btn-sm">
+        <i class="fa-solid fa-store"></i> Browse full shop
+      </a>
+    </header>
+
+    <!-- ── Loading ── -->
+    <div class="bm-state" *ngIf="loading">
+      <div class="bm-spinner"></div>
+      <p>Counting the top sellers…</p>
+    </div>
+
+    <!-- ── Error ── -->
+    <div class="bm-state is-error" *ngIf="!loading && error && products.length === 0">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <h3>Couldn't load bestsellers</h3>
+      <p>{{ error }}</p>
+      <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="loadBestsellers()">
+        <i class="fa-solid fa-rotate-right"></i> Try again
+      </button>
+    </div>
+
+    <!-- ── Empty state ── -->
+    <div class="bm-state" *ngIf="!loading && !error && products.length === 0">
+      <i class="fa-solid fa-box-open"></i>
+      <h3>No bestsellers yet</h3>
+      <p>Once customers rate products, the favourites will show up right here.</p>
+    </div>
+
+    <!-- ── Ranked list ── -->
+    <ol class="bestseller-list" *ngIf="!loading && products.length > 0">
+      <li class="bm-card bm-card-hover bestseller-row"
+          *ngFor="let p of products; let i = index; trackBy: trackByProduct"
+          [class.is-top]="i === 0">
+
+        <span class="bestseller-rank" [ngClass]="medalClass(i)">#{{ i + 1 }}</span>
+
+        <a class="bestseller-media" [routerLink]="['/client/single', p.id]">
+          <img [src]="getProductImage(p)" (error)="onImageError($event)" [alt]="p.name" loading="lazy" />
+        </a>
+
+        <div class="bestseller-info">
+          <div class="bestseller-meta">
+            <span class="bm-badge bm-badge-muted" *ngIf="p.categoryName">{{ p.categoryName }}</span>
+            <span class="bm-stars">
+              <i class="fa-solid fa-star" *ngFor="let lit of starsFor(p.rate)" [class.lit]="lit"></i>
+            </span>
+            <span class="bm-small bm-muted" *ngIf="p.rate">{{ p.rate | number:'1.1-1' }}</span>
+          </div>
+
+          <h3 class="bestseller-name">
+            <a [routerLink]="['/client/single', p.id]">{{ p.name }}</a>
+          </h3>
+
+          <p class="bestseller-desc">{{ p.description || 'Top-rated product from the NextGenTech catalogue.' }}</p>
+        </div>
+
+        <div class="bestseller-actions">
+          <span class="bm-price">{{ p.price | currency }}</span>
+          <a [routerLink]="['/client/single', p.id]" class="bm-btn bm-btn-primary bm-btn-sm">
+            <i class="fa-solid fa-eye"></i> View product
+          </a>
+        </div>
+      </li>
+    </ol>
+
+  </div>
+</section>

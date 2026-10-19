@@ -1,0 +1,144 @@
+<div class="ct-page bm-page">
+  <div class="bm-container">
+
+    <header class="bm-page-head ct-head">
+      <div>
+        <span class="bm-eyebrow">
+          <i class="fa-solid fa-headset"></i>
+          Support
+        </span>
+        <h1 class="bm-page-title">Get in touch</h1>
+        <p class="bm-page-sub">
+          Questions about an order, a product or your account? Send us a message and the team
+          will get back to you — usually within one business day.
+        </p>
+      </div>
+      <a routerLink="/client/shop" class="bm-btn bm-btn-outline">
+        <i class="fa-solid fa-store"></i>
+        <span>Back to shop</span>
+      </a>
+    </header>
+
+    <div class="bm-grid bm-grid-3 ct-cards">
+      <!-- Static page content: replace with real store data when a config endpoint exists -->
+      <article class="bm-card bm-card-hover ct-card">
+        <span class="ct-icon"><i class="fa-solid fa-location-dot"></i></span>
+        <h2 class="bm-card-title ct-card-title">Visit the store</h2>
+        <p class="bm-secondary bm-small ct-card-text">
+          Online only — no physical shop.<br>
+          Support is available Monday to Saturday.
+        </p>
+      </article>
+
+      <article class="bm-card bm-card-hover ct-card">
+        <span class="ct-icon"><i class="fa-solid fa-envelope"></i></span>
+        <h2 class="bm-card-title ct-card-title">Email us</h2>
+        <p class="bm-secondary bm-small ct-card-text">
+          Send the details of your request and we’ll reply by email.
+        </p>
+      </article>
+
+      <article class="bm-card bm-card-hover ct-card">
+        <span class="ct-icon"><i class="fa-solid fa-clock"></i></span>
+        <h2 class="bm-card-title ct-card-title">Response time</h2>
+        <p class="bm-secondary bm-small ct-card-text">
+          Under 24 hours on business days.<br>
+          Urgent order issues are prioritised.
+        </p>
+      </article>
+    </div>
+
+    <section class="bm-card ct-form-card">
+      <div class="bm-card-head">
+        <h2 class="bm-card-title">
+          <i class="fa-solid fa-paper-plane text-accent"></i>
+          Send a message
+        </h2>
+        <span class="bm-badge bm-badge-muted"><i class="fa-solid fa-lock"></i> Secure form</span>
+      </div>
+
+      <div class="bm-alert bm-alert-success ct-success" *ngIf="sent">
+        <i class="fa-solid fa-circle-check"></i>
+        <div>
+          <strong>Message sent.</strong>
+          <span class="bm-small">Our support team will reply within one business day.</span>
+        </div>
+        <button type="button" class="bm-btn bm-btn-ghost bm-btn-sm" (click)="sent = false">
+          <i class="fa-solid fa-xmark"></i> Dismiss
+        </button>
+      </div>
+
+      <form class="bm-card-pad" #contactForm="ngForm" (ngSubmit)="send()" novalidate>
+        <div class="ct-row">
+          <div class="bm-field">
+            <label class="bm-label" for="ctName">Your name</label>
+            <div class="bm-input-group">
+              <i class="fa-solid fa-user"></i>
+              <input id="ctName" name="name" type="text" class="bm-input" placeholder="Jane Doe"
+                     autocomplete="name" required [(ngModel)]="model.name">
+            </div>
+            <p class="bm-hint ct-error" *ngIf="submitted && !model.name.trim()">Please tell us your name.</p>
+          </div>
+
+          <div class="bm-field">
+            <label class="bm-label" for="ctEmail">Email address</label>
+            <div class="bm-input-group">
+              <i class="fa-solid fa-envelope"></i>
+              <input id="ctEmail" name="email" type="email" class="bm-input" placeholder="you@example.com"
+                     autocomplete="email" required [(ngModel)]="model.email">
+            </div>
+            <p class="bm-hint ct-error" *ngIf="submitted && !model.email.trim()">An email address is required.</p>
+          </div>
+        </div>
+
+        <div class="ct-row">
+          <div class="bm-field">
+            <label class="bm-label" for="ctTopic">Topic</label>
+            <select id="ctTopic" name="topic" class="bm-select" required [(ngModel)]="model.topic">
+              <option value="" disabled>Choose a topic…</option>
+              <option value="order">Order &amp; delivery</option>
+              <option value="product">Product question</option>
+              <option value="account">Account &amp; profile</option>
+              <option value="other">Something else</option>
+            </select>
+            <p class="bm-hint ct-error" *ngIf="submitted && !model.topic">Pick the closest topic.</p>
+          </div>
+
+          <div class="bm-field">
+            <label class="bm-label" for="ctOrder">Order reference <span class="bm-muted">(optional)</span></label>
+            <div class="bm-input-group">
+              <i class="fa-solid fa-receipt"></i>
+              <input id="ctOrder" name="order" type="text" class="bm-input" placeholder="#1234"
+                     inputmode="numeric" [(ngModel)]="model.order">
+            </div>
+          </div>
+        </div>
+
+        <div class="bm-field">
+          <label class="bm-label" for="ctMessage">Message</label>
+          <textarea id="ctMessage" name="message" class="bm-textarea" rows="6"
+                    placeholder="Tell us what happened, and include any order details."
+                    required [(ngModel)]="model.message"></textarea>
+          <p class="bm-hint ct-error" *ngIf="submitted && model.message.trim().length < 10">
+            Please add a little more detail (at least 10 characters).
+          </p>
+          <p class="bm-hint" *ngIf="!(submitted && model.message.trim().length < 10)">
+            Please don’t include payment card numbers or passwords.
+          </p>
+        </div>
+
+        <div class="ct-actions">
+          <button type="submit" class="bm-btn bm-btn-primary bm-btn-lg" [disabled]="sending">
+            <span class="bm-spinner ct-spinner" *ngIf="sending"></span>
+            <i class="fa-solid fa-paper-plane" *ngIf="!sending"></i>
+            <span>{{ sending ? 'Sending…' : 'Send message' }}</span>
+          </button>
+          <span class="bm-small bm-muted">
+            <i class="fa-solid fa-circle-info"></i>
+            We only reply to the address you provide.
+          </span>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

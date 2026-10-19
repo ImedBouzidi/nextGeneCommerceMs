@@ -1,0 +1,243 @@
+/* ═══════════════════════════════════════════════════════════════
+   NextGenTech — Shop page
+   ═══════════════════════════════════════════════════════════════ */
+
+.shop-page {
+  overflow: hidden;
+}
+
+.shop-page::before {
+  content: '';
+  position: absolute;
+  top: -180px;
+  right: -160px;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-a), transparent 65%);
+  pointer-events: none;
+}
+
+.shop-page > .bm-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header counter ── */
+.shop-head-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius-lg);
+  background: var(--accent-dim);
+}
+
+.shop-count-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--accent-light);
+  line-height: 1.1;
+}
+
+.shop-count-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Toolbar ── */
+.shop-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 18px 20px;
+  margin-bottom: 18px;
+}
+
+.shop-search {
+  flex: 1 1 auto;
+  min-width: 220px;
+}
+
+.shop-sort {
+  flex: 0 0 210px;
+}
+
+.shop-sort .bm-select {
+  margin-top: 0;
+}
+
+.shop-filters {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.shop-filters-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Product grid ── */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.shop-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Media ── */
+.shop-card-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.shop-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shop-card-cat {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.shop-card-off {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Body ── */
+.shop-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  padding: 16px 18px 18px;
+}
+
+.shop-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shop-card-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+}
+
+.shop-card-title a {
+  color: inherit;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shop-card-title a:hover {
+  color: var(--accent-light);
+}
+
+.shop-card-desc {
+  margin: 0;
+  flex: 1;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shop-card-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.shop-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.shop-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-green);
+}
+
+.shop-stock.is-low { color: var(--accent-amber); }
+.shop-stock.is-out { color: var(--accent-red); }
+
+/* ── Responsive ── */
+@media (max-width: 760px) {
+  .shop-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .shop-sort {
+    flex: 1 1 auto;
+  }
+
+  .shop-head-count {
+    flex-direction: row;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px 14px;
+  }
+
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 460px) {
+  .shop-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

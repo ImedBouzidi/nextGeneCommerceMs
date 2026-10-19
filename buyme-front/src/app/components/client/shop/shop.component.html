@@ -1,0 +1,136 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     NextGenTech — Shop All
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section class="bm-page shop-page">
+  <div class="bm-container">
+
+    <!-- ── Page header ── -->
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-store"></i> Shop</span>
+        <h1 class="bm-page-title">Shop <span class="bm-gradient">All Tech</span></h1>
+        <p class="bm-page-sub">
+          Every gadget, board and accessory in the catalogue — filter by category, sort the way you like,
+          and grab your picks.
+        </p>
+      </div>
+      <div class="shop-head-count">
+        <span class="shop-count-num">{{ filteredProducts.length }}</span>
+        <span class="shop-count-label">item{{ filteredProducts.length === 1 ? '' : 's' }}</span>
+      </div>
+    </header>
+
+    <!-- ── Toolbar: search + sort ── -->
+    <div class="shop-toolbar bm-card">
+      <div class="bm-input-group shop-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input class="bm-input"
+               type="search"
+               placeholder="Search products, categories…"
+               [(ngModel)]="searchTerm"
+               aria-label="Search products" />
+      </div>
+
+      <div class="shop-sort">
+        <label class="bm-label" for="shopSort">Sort by</label>
+        <select id="shopSort" class="bm-select" [(ngModel)]="sortKey">
+          <option *ngFor="let opt of sortOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ── Category chips ── -->
+    <div class="shop-filters">
+      <span class="shop-filters-label"><i class="fa-solid fa-tags"></i> Categories</span>
+      <div class="bm-chips">
+        <button type="button" class="bm-chip" [class.active]="selectedCategoryId === 'all'"
+                (click)="selectCategory('all')">All</button>
+        <button type="button" class="bm-chip"
+                *ngFor="let cat of categories; trackBy: trackByCategory"
+                [class.active]="selectedCategoryId === cat.id"
+                (click)="selectCategory(cat.id)">{{ cat.name }}</button>
+      </div>
+    </div>
+
+    <hr class="bm-divider" />
+
+    <!-- ── Loading ── -->
+    <div class="bm-state" *ngIf="loading">
+      <div class="bm-spinner"></div>
+      <p>Loading the catalogue…</p>
+    </div>
+
+    <!-- ── Error ── -->
+    <div class="bm-state is-error" *ngIf="!loading && error && products.length === 0">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <h3>Couldn't load products</h3>
+      <p>{{ error }}</p>
+      <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="loadCatalogue()">
+        <i class="fa-solid fa-rotate-right"></i> Try again
+      </button>
+    </div>
+
+    <!-- ── Empty state (filters match nothing) ── -->
+    <div class="bm-state" *ngIf="!loading && !error && filteredProducts.length === 0">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <h3>No products match your filters</h3>
+      <p>Try a different search term or reset the filters to see the full catalogue.</p>
+      <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="clearFilters()">
+        <i class="fa-solid fa-filter-circle-xmark"></i> Clear filters
+      </button>
+    </div>
+
+    <!-- ── Product grid ── -->
+    <div class="shop-grid" *ngIf="!loading && filteredProducts.length > 0">
+      <article class="bm-card bm-card-hover shop-card"
+               *ngFor="let p of filteredProducts; trackBy: trackByProduct">
+
+        <a class="shop-card-media" [routerLink]="['/client/single', p.id]">
+          <img [src]="getProductImage(p)" (error)="onImageError($event)" [alt]="p.name" loading="lazy" />
+          <span class="bm-badge bm-badge-info shop-card-cat">{{ p.categoryName }}</span>
+          <span class="bm-badge shop-card-off"
+                *ngIf="isLowStock(p)">Only {{ p.quantity }} left</span>
+          <span class="bm-badge bm-badge-danger shop-card-off" *ngIf="!isInStock(p)">Sold out</span>
+        </a>
+
+        <div class="shop-card-body">
+          <div class="shop-card-top">
+            <span class="bm-stars">
+              <i class="fa-solid fa-star" *ngFor="let lit of starsFor(p.rate)" [class.lit]="lit"></i>
+            </span>
+            <span class="bm-small bm-muted" *ngIf="p.rate">{{ p.rate | number:'1.1-1' }}</span>
+          </div>
+
+          <h3 class="shop-card-title">
+            <a [routerLink]="['/client/single', p.id]">{{ p.name }}</a>
+          </h3>
+
+          <p class="shop-card-desc">{{ p.description || 'No description provided for this product.' }}</p>
+
+          <div class="shop-card-foot">
+            <div class="shop-card-meta">
+              <span class="bm-price">{{ p.price | currency }}</span>
+              <span class="shop-stock"
+                    [class.is-out]="!isInStock(p)"
+                    [class.is-low]="isLowStock(p)">
+                <i class="fa-solid"
+                   [ngClass]="isInStock(p) ? (isLowStock(p) ? 'fa-triangle-exclamation' : 'fa-circle-check') : 'fa-circle-xmark'"></i>
+                {{ isInStock(p) ? (p.quantity + ' in stock') : 'Out of stock' }}
+              </span>
+            </div>
+
+            <button type="button"
+                    class="bm-btn bm-btn-primary bm-btn-sm"
+                    [disabled]="!isInStock(p)"
+                    (click)="addToCart(p)">
+              <i class="fa-solid" [ngClass]="isInCart(p) ? 'fa-circle-check' : 'fa-cart-shopping'"></i>
+              {{ isInCart(p) ? 'In Cart' : 'Add to Cart' }}
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+  </div>
+</section>

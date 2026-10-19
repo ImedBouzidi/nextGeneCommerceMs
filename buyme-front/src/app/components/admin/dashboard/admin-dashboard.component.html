@@ -1,0 +1,151 @@
+<div class="bm-page adm">
+  <div class="bm-container">
+
+    <header class="bm-page-head">
+      <div>
+        <span class="bm-eyebrow"><i class="fa-solid fa-shield-halved"></i> Admin</span>
+        <h1 class="bm-page-title">Overview</h1>
+        <p class="bm-page-sub">Store health at a glance.</p>
+      </div>
+    </header>
+
+    <!-- Partial-failure notice: a dead endpoint must not blank the whole page. -->
+    <div class="adm-warn" *ngIf="loadErrors.length">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>
+        Could not load: {{ loadErrors.join(', ') }}.
+        Figures below exclude those sources.
+      </span>
+    </div>
+
+    <div class="bm-state" *ngIf="loading">
+      <span class="bm-spinner" aria-hidden="true"></span>
+      <p>Loading store data…</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+
+      <!-- ── Stat tiles ─────────────────────────────────────── -->
+      <section class="adm-stats" aria-label="Key figures">
+        @for (stat of stats; track stat.label) {
+          <article class="adm-stat" [attr.data-tone]="stat.tone">
+            <span class="adm-stat-icon" aria-hidden="true">
+              <i class="fa-solid" [class]="stat.icon"></i>
+            </span>
+            <span class="adm-stat-body">
+              <span class="adm-stat-label">{{ stat.label }}</span>
+              <span class="adm-stat-value">{{ stat.value }}</span>
+              <span class="adm-stat-note">{{ stat.note }}</span>
+            </span>
+          </article>
+        }
+      </section>
+
+      <!-- ── Two-column: recent orders + shortcuts ──────────── -->
+      <section class="adm-split">
+
+        <div class="bm-card adm-panel">
+          <header class="bm-card-head adm-panel-head">
+            <h2 class="bm-card-title">
+              <i class="fa-solid fa-clock-rotate-left text-accent"></i>
+              Recent orders
+            </h2>
+            <a class="adm-panel-link" routerLink="/admin/orders">
+              View all <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </header>
+
+          <div class="bm-table-wrap" *ngIf="recentOrders.length">
+            <table class="bm-table adm-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Placed</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (order of recentOrders; track order.id) {
+                  <tr>
+                    <td class="strong">#{{ order.id }}</td>
+                    <td>{{ productName(order.productId) }}</td>
+                    <td>{{ order.orderDate | date:'mediumDate' }}</td>
+                    <td>
+                      <span class="bm-badge" [class.bm-badge-success]="statusTone(order.status) === 'ok'"
+                            [class.bm-badge-warn]="statusTone(order.status) === 'warn'"
+                            [class.bm-badge-info]="statusTone(order.status) === 'info'"
+                            [class.bm-badge-danger]="statusTone(order.status) === 'bad'"
+                            [class.bm-badge-muted]="statusTone(order.status) === 'muted'">
+                        {{ order.status || 'UNKNOWN' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="bm-state" *ngIf="!recentOrders.length">
+            <i class="fa-solid fa-receipt"></i>
+            <h3>No orders yet</h3>
+            <p>Orders placed in the storefront will appear here.</p>
+          </div>
+        </div>
+
+        <div class="bm-card adm-panel">
+          <header class="bm-card-head adm-panel-head">
+            <h2 class="bm-card-title">
+              <i class="fa-solid fa-bolt text-accent"></i>
+              Quick actions
+            </h2>
+          </header>
+
+          <div class="adm-shortcuts">
+            <a class="adm-shortcut" routerLink="/admin/products">
+              <span class="adm-shortcut-icon" aria-hidden="true"><i class="fa-solid fa-box"></i></span>
+              <span class="adm-shortcut-body">
+                <span class="adm-shortcut-title">Add a product</span>
+                <span class="adm-shortcut-desc">Create a new item with images and stock.</span>
+              </span>
+              <i class="fa-solid fa-chevron-right adm-shortcut-go"></i>
+            </a>
+
+            <a class="adm-shortcut" routerLink="/admin/categories">
+              <span class="adm-shortcut-icon" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
+              <span class="adm-shortcut-body">
+                <span class="adm-shortcut-title">Manage categories</span>
+                <span class="adm-shortcut-desc">Rename, regroup or remove categories.</span>
+              </span>
+              <i class="fa-solid fa-chevron-right adm-shortcut-go"></i>
+            </a>
+
+            <a class="adm-shortcut" routerLink="/admin/orders">
+              <span class="adm-shortcut-icon" aria-hidden="true"><i class="fa-solid fa-receipt"></i></span>
+              <span class="adm-shortcut-body">
+                <span class="adm-shortcut-title">Review orders</span>
+                <span class="adm-shortcut-desc">Approve or decline incoming orders.</span>
+              </span>
+              <i class="fa-solid fa-chevron-right adm-shortcut-go"></i>
+            </a>
+
+            <a class="adm-shortcut" routerLink="/admin/payments">
+              <span class="adm-shortcut-icon" aria-hidden="true"><i class="fa-solid fa-credit-card"></i></span>
+              <span class="adm-shortcut-body">
+                <span class="adm-shortcut-title">Payments</span>
+                <span class="adm-shortcut-desc">Inspect transaction history.</span>
+              </span>
+              <i class="fa-solid fa-chevron-right adm-shortcut-go"></i>
+            </a>
+          </div>
+
+          <div class="adm-stockline">
+            <span class="adm-stockline-label">Stock value at list price</span>
+            <span class="adm-stockline-value">{{ stockValue | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+      </section>
+    </ng-container>
+  </div>
+</div>

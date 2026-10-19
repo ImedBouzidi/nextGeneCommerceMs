@@ -1,0 +1,285 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     NextGenTech — Homepage
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- ── Hero Section ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <span class="hero-badge"><i class="fa-solid fa-microchip"></i> Tech E-Commerce</span>
+    <h1 class="hero-title">Next-Gen <span class="gradient-text">Tech</span>, Delivered.</h1>
+    <p class="hero-subtitle">Discover the latest gadgets, electronics &amp; accessories — all in one place.</p>
+    <div class="hero-actions">
+      <a class="btn-primary-lg" (click)="scrollToProducts()">
+        <i class="fa-solid fa-bag-shopping"></i> Shop Now
+      </a>
+      <a routerLink="/client/shop" class="btn-outline-lg">
+        <i class="fa-solid fa-grid-2"></i> Browse All
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">500+</span><span class="stat-label">Products</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">24/7</span><span class="stat-label">Support</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">Free</span><span class="stat-label">Shipping</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Trust Badges ── -->
+<section class="trust-strip">
+  <div class="trust-inner">
+    <div class="trust-item">
+      <i class="fa-solid fa-truck-fast"></i>
+      <div><strong>Free Shipping</strong><span>On all orders</span></div>
+    </div>
+    <div class="trust-item">
+      <i class="fa-solid fa-headset"></i>
+      <div><strong>24/7 Support</strong><span>Always here to help</span></div>
+    </div>
+    <div class="trust-item">
+      <i class="fa-solid fa-shield-halved"></i>
+      <div><strong>Secure Payment</strong><span>256-bit encryption</span></div>
+    </div>
+    <div class="trust-item">
+      <i class="fa-solid fa-rotate-left"></i>
+      <div><strong>30-Day Returns</strong><span>Money back guarantee</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── AI Recommendations ── -->
+<section class="section-recommendations" *ngIf="!loadingRecommendations && recommendedProducts.length > 0">
+  <div class="section-container">
+    <div class="section-header">
+      <div>
+        <span class="section-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> AI-Powered</span>
+        <h2 class="section-title">Recommended For You</h2>
+      </div>
+    </div>
+
+    <div class="rec-card" *ngIf="getCurrentRecommendation() as rec" [style.opacity]="recommendationFade ? 1 : 0">
+      <div class="rec-image-wrap">
+        <img [src]="getProductImage(rec)" (error)="onImageError($event)" [alt]="rec.name" class="rec-image" />
+        <span class="rec-badge-overlay"><i class="fa-solid fa-star"></i> Pick for You</span>
+      </div>
+      <div class="rec-info">
+        <h3 class="rec-name">{{ rec.name }}</h3>
+        <p class="rec-desc">{{ rec.description | slice:0:150 }}<span
+            *ngIf="(rec.description?.length || 0) > 150">…</span></p>
+        <div class="rec-meta">
+          <span class="rec-price">{{ rec.price | currency }}</span>
+          <span class="rec-stock"><i class="fa-solid fa-circle-check"></i> {{ rec.quantity }} in stock</span>
+        </div>
+        <div class="rec-actions">
+          <a [routerLink]="['/client/single', rec.id]" class="btn-primary-sm"><i class="fa-solid fa-eye"></i> View</a>
+          <button class="btn-outline-sm" (click)="addToCart(rec)" [disabled]="isInCart(rec) || rec.quantity === 0">
+            <i class="fa-solid fa-cart-plus"></i>
+            <span *ngIf="!isInCart(rec)">Add to Cart</span>
+            <span *ngIf="isInCart(rec)">In Cart</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dots -->
+    <div class="rec-dots" *ngIf="recommendedProducts.length > 1">
+      <button *ngFor="let p of recommendedProducts; let i = index" class="dot"
+        [class.active]="i === currentRecommendationIndex" (click)="goToRecommendation(i)"
+        [attr.aria-label]="'Rec ' + (i+1)"></button>
+    </div>
+  </div>
+</section>
+
+<!-- ── Promotions Banner ── -->
+<section class="section-promo" *ngIf="!loadingPromotions && currentPromotion">
+  <div class="section-container">
+    <div class="promo-banner">
+      <div class="promo-icon"><i class="fa-solid fa-gift"></i></div>
+      <div class="promo-text">
+        <h3>Exclusive Offer — <span class="gradient-text">{{ currentPromotion.segment || 'Valued' }} Segment</span></h3>
+        <p>Get
+          <strong *ngIf="currentPromotion.discount_percent || currentPromotion.discount">{{
+            currentPromotion.discount_percent || currentPromotion.discount }}% off</strong>
+          — available for <strong>{{ currentPromotion.display_name || userDisplayName || 'you' }}</strong>.
+        </p>
+      </div>
+      <div class="promo-badge" *ngIf="currentPromotion.discount_percent || currentPromotion.discount">
+        <span class="promo-pct">{{ currentPromotion.discount_percent || currentPromotion.discount }}%</span>
+        <span class="promo-off">OFF</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Products Section ── -->
+<section class="section-products" id="products-section">
+  <div class="section-container">
+    <!-- Header -->
+    <div class="products-header">
+      <div>
+        <span class="section-badge"><i class="fa-solid fa-fire"></i> Catalogue</span>
+        <h2 class="section-title">Our Products</h2>
+      </div>
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="search" class="search-input" placeholder="Search products…" [(ngModel)]="productSearchTerm"
+          id="product-search-input" />
+      </div>
+    </div>
+
+    <!-- Category pills -->
+    <div class="category-pills" *ngIf="hasCategoryFilter()">
+      <button class="pill" [class.active]="selectedCategoryId === 'all'" (click)="selectCategory('all')">
+        <i class="fa-solid fa-border-all"></i> All
+      </button>
+      <button *ngFor="let group of categoriesWithProducts; trackBy: trackByCategory" class="pill"
+        [class.active]="selectedCategoryId === group.category.id" (click)="selectCategory(group.category.id)">
+        {{ group.category.name }}
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="state-message">
+      <div class="spinner"></div>
+      <p>Loading products…</p>
+    </div>
+
+    <!-- Non-fatal notice (recommendations / promotions) -->
+    <div *ngIf="softError && !loading" class="state-message">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <p>{{ softError }}</p>
+    </div>
+
+    <!-- Error (catalogue could not be loaded at all) -->
+    <div *ngIf="error && !loading && allProducts.length === 0" class="state-message error">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <p>{{ error }}</p>
+    </div>
+
+    <!-- Product Grid (tab: All) -->
+    <ng-container *ngIf="!loading && allProducts.length > 0 && selectedCategoryId === 'all'">
+      <ng-container *ngIf="categoriesWithProducts.length > 0">
+        <ng-container *ngFor="let group of categoriesWithProducts; trackBy: trackByCategory">
+          <ng-container *ngIf="filteredProductsForGroup(group).length > 0">
+            <div class="category-divider">
+              <h3 class="category-name">{{ group.category.name }}</h3>
+              <span class="category-desc">{{ group.category.description }}</span>
+            </div>
+            <div class="product-grid">
+              <div *ngFor="let product of filteredProductsForGroup(group); let idx = index; trackBy: trackByProduct"
+                class="p-card" [style.animation-delay]="cardAnimationDelay(idx)">
+                <div class="p-card-img-wrap">
+                  <img [src]="getProductImage(product)" (error)="onImageError($event)" [alt]="product.name" />
+                  <a [routerLink]="['/client/single', product.id]" class="p-card-quick-view" title="View Details">
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <span class="stock-badge" *ngIf="product.quantity === 0"><i class="fa-solid fa-ban"></i> Out of
+                    stock</span>
+                </div>
+                <div class="p-card-body">
+                  <a [routerLink]="['/client/single', product.id]" class="p-card-name">{{ product.name }}</a>
+                  <p class="p-card-desc">{{ product.description | slice:0:55 }}<span
+                      *ngIf="product.description.length > 55">…</span></p>
+
+                  <!-- Price -->
+                  <div class="p-card-price-row">
+                    <ng-container *ngIf="discountPercent && discountPercent > 0; else noDiscountTpl">
+                      <del class="old-price">{{ product.price | currency }}</del>
+                      <span class="current-price">{{ (product.price * (1 - discountPercent / 100)) | currency }}</span>
+                      <span class="discount-tag">-{{ discountPercent }}%</span>
+                    </ng-container>
+                    <ng-template #noDiscountTpl>
+                      <span class="current-price">{{ product.price | currency }}</span>
+                    </ng-template>
+                  </div>
+
+                  <!-- Rating + Stock -->
+                  <div class="p-card-meta">
+                    <div class="stars">
+                      <i *ngFor="let n of [1,2,3,4,5]" class="fa-solid fa-star"
+                        [class.lit]="(product.rate || 0) >= n"></i>
+                    </div>
+                    <span class="stock-info" *ngIf="product.quantity > 0">{{ product.quantity }} in stock</span>
+                  </div>
+                </div>
+                <button class="p-card-cart-btn" (click)="addToCart(product)"
+                  [disabled]="isInCart(product) || product.quantity === 0" [class.added]="isInCart(product)">
+                  <i class="fa-solid" [class.fa-cart-plus]="!isInCart(product)"
+                    [class.fa-check]="isInCart(product)"></i>
+                  {{ isInCart(product) ? 'Added' : 'Add to Cart' }}
+                </button>
+              </div>
+            </div>
+          </ng-container>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+
+    <!-- Product Grid (tab: Specific category) -->
+    <ng-container *ngIf="!loading && allProducts.length > 0 && selectedCategoryId !== 'all'">
+      <div class="product-grid" *ngIf="getProductsForActiveTab().length > 0">
+        <div *ngFor="let product of getProductsForActiveTab(); let idx = index; trackBy: trackByProduct" class="p-card"
+          [style.animation-delay]="cardAnimationDelay(idx)">
+          <div class="p-card-img-wrap">
+            <img [src]="getProductImage(product)" (error)="onImageError($event)" [alt]="product.name" />
+            <a [routerLink]="['/client/single', product.id]" class="p-card-quick-view" title="View Details">
+              <i class="fa-solid fa-eye"></i>
+            </a>
+            <span class="stock-badge" *ngIf="product.quantity === 0"><i class="fa-solid fa-ban"></i> Out of stock</span>
+          </div>
+          <div class="p-card-body">
+            <a [routerLink]="['/client/single', product.id]" class="p-card-name">{{ product.name }}</a>
+            <p class="p-card-desc">{{ product.description | slice:0:55 }}<span
+                *ngIf="product.description.length > 55">…</span></p>
+            <div class="p-card-price-row">
+              <ng-container *ngIf="discountPercent && discountPercent > 0; else noDiscTpl2">
+                <del class="old-price">{{ product.price | currency }}</del>
+                <span class="current-price">{{ (product.price * (1 - discountPercent / 100)) | currency }}</span>
+                <span class="discount-tag">-{{ discountPercent }}%</span>
+              </ng-container>
+              <ng-template #noDiscTpl2>
+                <span class="current-price">{{ product.price | currency }}</span>
+              </ng-template>
+            </div>
+            <div class="p-card-meta">
+              <div class="stars">
+                <i *ngFor="let n of [1,2,3,4,5]" class="fa-solid fa-star" [class.lit]="(product.rate || 0) >= n"></i>
+              </div>
+              <span class="stock-info" *ngIf="product.quantity > 0">{{ product.quantity }} in stock</span>
+            </div>
+          </div>
+          <button class="p-card-cart-btn" (click)="addToCart(product)"
+            [disabled]="isInCart(product) || product.quantity === 0" [class.added]="isInCart(product)">
+            <i class="fa-solid" [class.fa-cart-plus]="!isInCart(product)" [class.fa-check]="isInCart(product)"></i>
+            {{ isInCart(product) ? 'Added' : 'Add to Cart' }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- No results -->
+    <div *ngIf="!loading && allProducts.length > 0 && !hasAnyMatchingProducts()" class="state-message">
+      <i class="fa-solid fa-filter-circle-xmark"></i>
+      <p>No products match your filter.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <i class="fa-solid fa-bolt"></i> Next<span class="gradient-text">GenTech</span>
+    </div>
+    <p class="footer-copy">&copy; 2026 NextGenTech. Premium tech, delivered.</p>
+  </div>
+</footer>
+
+<!-- ── Floating Cart FAB ── -->
+<a routerLink="/client/cart" class="fab-cart" title="Go to Cart">
+  <i class="fa-solid fa-cart-shopping"></i>
+</a>

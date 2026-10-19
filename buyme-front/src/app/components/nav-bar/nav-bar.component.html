@@ -1,0 +1,61 @@
+<!-- NextGenTech — Main Navbar -->
+<nav class="navbar" id="main-navbar">
+    <div class="nav-inner">
+        <!-- Brand -->
+        <a class="nav-brand" routerLink="/client/home">
+            <i class="fa-solid fa-bolt brand-icon"></i>
+            <span class="brand-text">Next<span class="brand-highlight">GenTech</span></span>
+        </a>
+
+        <!-- Mobile toggle -->
+        <button class="nav-toggle" (click)="mobileMenuOpen = !mobileMenuOpen" aria-label="Toggle menu">
+            <i class="fa-solid" [class.fa-bars]="!mobileMenuOpen" [class.fa-xmark]="mobileMenuOpen"></i>
+        </button>
+
+        <!-- Links -->
+        <div class="nav-links" [class.open]="mobileMenuOpen">
+            <a routerLink="/client/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"
+                (click)="mobileMenuOpen=false">
+                <i class="fa-solid fa-house"></i> Home
+            </a>
+            <a routerLink="/client/shop" routerLinkActive="active" (click)="mobileMenuOpen=false">
+                <i class="fa-solid fa-store"></i> Shop
+            </a>
+            <a routerLink="/client/cart" routerLinkActive="active" (click)="mobileMenuOpen=false">
+                <i class="fa-solid fa-cart-shopping"></i> Cart
+            </a>
+            <a routerLink="/client/my-orders" routerLinkActive="active" (click)="mobileMenuOpen=false">
+                <i class="fa-solid fa-box"></i> My Orders
+            </a>
+        </div>
+
+        <!-- Right side -->
+        <div class="nav-actions">
+            <button class="theme-toggle" type="button" (click)="toggleTheme()"
+                [attr.aria-pressed]="!isDarkMode()"
+                [attr.title]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+                aria-label="Toggle colour theme">
+                <i class="fa-solid fa-sun" *ngIf="isDarkMode()"></i>
+                <i class="fa-solid fa-moon" *ngIf="!isDarkMode()"></i>
+            </button>
+            <ng-container *ngIf="isAuthenticated; else guestActions">
+                <a *ngIf="currentUser" routerLink="/client/profile" class="user-chip" title="Profile">
+                    <img [src]="userAvatar" alt="avatar" class="avatar"
+                        (error)="userAvatar='assets/img/default-avatar.svg'" />
+                    <span class="user-name">{{ currentUser.firstName || 'Profile' }}</span>
+                </a>
+                <button class="btn-logout" type="button" (click)="logout()" title="Log out" aria-label="Log out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </ng-container>
+            <ng-template #guestActions>
+                <a routerLink="/login" class="btn-nav-action">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login
+                </a>
+                <a routerLink="/register" class="btn-nav-accent">
+                    Sign Up
+                </a>
+            </ng-template>
+        </div>
+    </div>
+</nav>

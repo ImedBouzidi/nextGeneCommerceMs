@@ -1,0 +1,71 @@
+<div class="auth-shell">
+  <div class="auth-glow" aria-hidden="true"></div>
+
+  <section class="auth-card bm-card" aria-labelledby="loginTitle">
+    <header class="auth-head bm-center">
+      <div class="auth-brand">
+        <span class="auth-brand-mark"><i class="fa-solid fa-bolt"></i></span>
+        <span class="auth-brand-text bm-gradient">NextGenTech</span>
+      </div>
+      <h1 id="loginTitle" class="auth-title">Welcome back</h1>
+      <p class="auth-sub bm-muted">Sign in to manage your account and orders.</p>
+    </header>
+
+    <form (ngSubmit)="onLogin()" novalidate>
+      <div class="bm-field">
+        <label class="bm-label" for="loginEmail">Email</label>
+        <div class="bm-input-group">
+          <i class="fa-solid fa-envelope"></i>
+          <input
+            id="loginEmail"
+            type="email"
+            name="email"
+            class="bm-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+            [(ngModel)]="credentials.email">
+        </div>
+      </div>
+
+      <div class="bm-field">
+        <label class="bm-label" for="loginPassword">Password</label>
+        <div class="bm-input-group">
+          <i class="fa-solid fa-lock"></i>
+          <input
+            id="loginPassword"
+            type="password"
+            name="password"
+            class="bm-input"
+            placeholder="Your password"
+            autocomplete="current-password"
+            required
+            [(ngModel)]="credentials.password">
+        </div>
+      </div>
+
+      <div *ngIf="message" class="bm-alert auth-alert" role="alert">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ message }}</span>
+      </div>
+
+      <button type="submit" class="bm-btn bm-btn-primary bm-btn-lg bm-btn-block" [disabled]="isLoading">
+        <ng-container *ngIf="!isLoading">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Sign in</span>
+        </ng-container>
+        <ng-container *ngIf="isLoading">
+          <span class="auth-spinner" aria-hidden="true"></span>
+          <span>Signing in…</span>
+        </ng-container>
+      </button>
+    </form>
+
+    <hr class="bm-divider">
+
+    <p class="auth-alt bm-center bm-small bm-muted">
+      Don’t have an account?
+      <a routerLink="/register">Create one</a>
+    </p>
+  </section>
+</div>

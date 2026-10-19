@@ -1,0 +1,154 @@
+/* Admin account page — identity banner, details/session panels. */
+
+.ac-identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.ac-avatar {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--accent), var(--accent-violet));
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.32);
+}
+
+.ac-identity-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ac-identity-name {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 750;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.ac-identity-email {
+  margin: 2px 0 10px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.ac-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ac-signout {
+  flex: 0 0 auto;
+}
+
+.ac-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.ac-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ac-panel-head {
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── Definition list ──────────────────────────────────────────── */
+
+.ac-fields {
+  margin: 0;
+  padding: 6px 18px 12px;
+}
+
+.ac-field {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ac-field:last-child {
+  border-bottom: 0;
+}
+
+.ac-field dt {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.ac-field dd {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  text-align: right;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ac-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.ac-wrap {
+  overflow-wrap: anywhere;
+}
+
+.ac-copy {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px;
+}
+.ac-copy:hover { color: var(--accent-light); }
+
+/* ── Notice ───────────────────────────────────────────────────── */
+
+.ac-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 18px 18px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-faint);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.ac-note i {
+  margin-top: 2px;
+  color: var(--accent-light);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .ac-grid { grid-template-columns: 1fr; }
+  .ac-identity { flex-wrap: wrap; }
+  .ac-signout { width: 100%; justify-content: center; }
+}
