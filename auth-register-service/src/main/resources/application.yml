@@ -1,0 +1,77 @@
+server:
+  port: 8085
+  # Removed context-path to expose endpoints at root
+
+spring:
+  config:
+    import:
+      - optional:file:./auth-register-service/.env[.properties]
+      - optional:file:./.env[.properties]
+  application:
+    name: auth-register-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:buyme_users}
+    username: ${DB_USERNAME:imed}
+    password: ${AUTH_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/e-commerce
+
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: e-commerce
+  resource: auth-service
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+  admin:
+    username: ${KEYCLOAK_ADMIN_USERNAME}
+    password: ${KEYCLOAK_ADMIN_PASSWORD}
+
+
+app:
+  upload:
+    dir: /home/imed/Documents/e-commerce-ms/auth-register-service/uploads
+  admin:
+    seed:
+      enabled: ${BUYME_ADMIN_SEED_ENABLED:true}
+    email: ${BUYME_ADMIN_EMAIL:}
+    password: ${BUYME_ADMIN_PASSWORD:}
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    org.keycloak: DEBUG
+    tn.iteam.authregisterservice: DEBUG
+    # Hibernate SQL logging
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

@@ -1,0 +1,75 @@
+#server:
+#  port: 8085
+#
+#spring:
+#  config:
+#    activate:
+#      on-profile: local
+#
+spring:
+  config:
+    activate:
+      on-profile: local
+  # 💡 Correction: The 'application' property belongs directly under 'spring'
+  application:
+    name: auth-register-service
+  # Single source of truth: root .env (see manage-services.sh)
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: auth-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:buyme_users}
+    username: ${DB_USERNAME:imed}
+    password: ${AUTH_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/e-commerce
+
+server:
+  port: 8085
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: e-commerce
+  resource: auth-service
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+  admin:
+    username: ${KEYCLOAK_ADMIN_USERNAME}
+    password: ${KEYCLOAK_ADMIN_PASSWORD}
+
+app:
+  upload:
+    dir: /home/imed/Documents/e-commerce-ms/auth-register-service/uploads
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    org.keycloak: DEBUG
+    tn.iteam.authregisterservice: DEBUG

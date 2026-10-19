@@ -1,0 +1,47 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: order-service
+
+jwt:
+  secret: ${JWT_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    ip-address: 192.168.1.169
+    hostname: localhost
+    non-secure-port: 8082
+
+feign:
+  client:
+    config:
+      AUTH-REGISTER-SERVICE:
+        url: http://localhost:8085
+        connect-timeout: 5000
+        read-timeout: 10000
+
+logging:
+  level:
+    root: INFO
+    com.iteam.orderservice: DEBUG
+    feign: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+  file:
+    name: orderservice.log

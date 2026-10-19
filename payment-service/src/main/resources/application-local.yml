@@ -1,0 +1,133 @@
+spring:
+  application:
+    name: payment-service   # REQUIRED for Eureka to register
+
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:e-com-payment-db}
+    username: ${DB_USERNAME}
+    password: ${PAYMENT_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # Flyway owns the schema. `update` would silently re-create tables behind
+      # Flyway's back and can never add the unique constraints that payment
+      # idempotency depends on.
+      ddl-auto: validate
+    show-sql: false
+    # No database-platform needed — auto-detected!
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Baseline an existing (Hibernate-created) database at version 0 so V1 runs
+    # against it and can add the constraints.
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        # Strong delivery guarantees. These were silently ignored before: a
+        # hand-rolled ProducerFactory bean (hardcoded to 127.0.0.1:9092) replaced
+        # Boot's autoconfiguration, so the values here never took effect and the
+        # containerised build pointed at an address that does not exist.
+        enable.idempotence: true
+        acks: all
+        max.in.flight.requests.per.connection: 5
+        # Fail fast instead of pinning the publisher thread for the 60s default.
+        max.block.ms: 5000
+        delivery.timeout.ms: 30000
+        request.timeout.ms: 10000
+    consumer:
+      group-id: payment-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        # Events are defined in common-kafka; the previous value trusted only this
+        # service's own dto package, so every event failed to deserialise.
+        spring.json.trusted.packages: "tn.iteam.common.kafka.event.*,tn.iteam.paymentservice.*"
+        isolation.level: read_committed
+      enable-auto-commit: false
+    admin:
+      properties:
+        auto.create.topics.enable: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/e-commerce
+
+  server:
+  port: 8087
+
+payment:
+  # Which acquirer handles which instrument.
+  #
+  # Stripe does NOT operate in Tunisia: it cannot be used as a Tunisian merchant
+  # account and cannot process domestically issued instruments. It is wired here for
+  # serving customers abroad. Domestic instruments must go to a local facilitator.
+  gateway:
+    international: ${PAYMENT_GATEWAY_INTERNATIONAL:fake}   # fake | stripe
+    local: ${PAYMENT_GATEWAY_LOCAL:unconfigured}           # konnect | unconfigured
+
+  currency: ${PAYMENT_CURRENCY:TND}
+
+  # Central Bank of Tunisia certified facilitator. Handles Tunisian bank cards,
+  # e-Dinar, D17 wallets and ClicToPay. Credentials from dashboard.konnect.network.
+  konnect:
+    base-url: ${KONNECT_BASE_URL:https://sandbox.konnect.network/api/public/payments}
+    api-key: ${KONNECT_API_KEY:}
+    sandbox: ${KONNECT_SANDBOX:true}
+
+  stripe:
+    # Test-mode secret. NEVER commit a live sk_… key.
+    secret-key: ${STRIPE_SECRET_KEY:}
+    # Endpoint secret for POST /api/payments/webhooks/stripe. Without it the
+    # webhook is refused, which is deliberate: an unsigned webhook is just
+    # anyone posting "this payment succeeded".
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+
+# Eureka Registration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    instance-id: ${spring.application.name}:${server.port}
+
+# Keycloak client config (used by spring-boot-starter-oauth2-client if needed)
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: e-commerce
+  resource: payment-service
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+  admin:
+    username: ${KEYCLOAK_ADMIN_USERNAME}
+    password: ${KEYCLOAK_ADMIN_PASSWORD}
+
+logging:
+  level:
+    root: INFO
+    tn.iteam.paymentservice: DEBUG
+    # The previous config logged at DEBUG/TRACE and printed bound statement
+    # parameters (customer ids, amounts) and Feign Authorization headers.
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
+    org.springframework.security.oauth2: INFO
+    org.springframework.security.oauth2.server.resource: INFO

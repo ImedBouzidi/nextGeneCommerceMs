@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: order-service   # REQUIRED for Eureka to register
+
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:e-com-order-db}
+    username: ${DB_USERNAME}
+    password: ${ORDER_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: order-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        # Events come from common-kafka; the previous value only trusted this
+        # service's own dto package, so every payment event failed to deserialise.
+        spring.json.trusted.packages: "tn.iteam.common.kafka.event.*,tn.iteam.orderservice.*"
+      enable-auto-commit: false
+    admin:
+      properties:
+        auto.create.topics.enable: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/e-commerce
+
+server:
+  port: 8082
+  address: 0.0.0.0   # allows Docker, K8s, and local network access
+
+# Eureka Registration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    instance-id: ${spring.application.name}:${server.port}
+
+# Keycloak client config (utilisé par spring-boot-starter-oauth2-client si besoin)
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: e-commerce
+  resource: order-service
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+  admin:
+    username: ${KEYCLOAK_ADMIN_USERNAME}
+    password: ${KEYCLOAK_ADMIN_PASSWORD}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    feign: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    tn.iteam.orderservice: DEBUG
+    tn.iteam.orderservice.service: DEBUG
+    tn.iteam.orderservice.controller: DEBUG
+    org.apache.kafka: DEBUG
+    org.springframework.kafka: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.security.oauth2.server.resource: DEBUG

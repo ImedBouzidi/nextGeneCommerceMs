@@ -1,0 +1,44 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: kafka-service
+  config:
+    activate:
+      on-profile: docker
+  kafka:
+    # Inside the compose network the broker advertises on 29092
+    # (see docker-compose.yml KAFKA_ADVERTISED_LISTENERS)
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: kafka-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    admin:
+      properties:
+        auto.create.topics.enable: true
+
+eureka:
+  client:
+    enabled: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+  instance:
+    instance-id: ${spring.application.name}:${server.port}
+    metadata-map:
+      zone: docker
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

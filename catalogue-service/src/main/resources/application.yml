@@ -1,0 +1,29 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: catalogue-service
+
+jwt:
+  secret: ${JWT_SECRET}
+
+app:
+  upload:
+    # Relative to the service working directory so it works on any machine.
+    # Override with UPLOAD_DIR when running from Docker or a deployed jar.
+    dir: ${UPLOAD_DIR:./uploads}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env,metrics,loggers  # Standard set; add 'beans' for deeper dev debugging
+  endpoint:
+    health:
+      show-details: always  # Includes DB/JVM details
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG  # For REST endpoints
+    org.springframework.security: DEBUG  # For JWT/auth

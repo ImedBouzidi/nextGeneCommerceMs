@@ -20,9 +20,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment files
-.env
-.env.local
-.env.*.local
+**/.env
+**/.env.*
+!**/.env.example
 
 # Maven/Gradle build outputs
 **/target/

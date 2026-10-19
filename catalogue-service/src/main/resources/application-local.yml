@@ -1,0 +1,77 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  application:
+    name: catalogue-service
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/e-commerce
+
+  # Single source of truth: root .env (see manage-services.sh)
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # KafkaTemplate#send blocks while fetching topic metadata. Fail fast instead of
+      # holding a thread for the 60s default when the broker is down.
+      properties:
+        max.block.ms: 3000
+        delivery.timeout.ms: 3000
+        request.timeout.ms: 2000
+    consumer:
+      group-id: catalogue-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "tn.iteam.common.kafka.event.*,tn.iteam.catalogueservice.*"
+      enable-auto-commit: false
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:e-com-catalogue-db}
+    username: ${DB_USERNAME}
+    password: ${CATALOGUE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8084
+
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: e-commerce
+  resource: catalogue-service
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+  use-resource-role-mappings: true
+  bearer-only: true
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    instance-id: ${spring.application.name}:${server.port}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.keycloak: DEBUG
+    tn.iteam.catalogueservice: DEBUG

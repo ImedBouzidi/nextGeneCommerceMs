@@ -1,0 +1,39 @@
+server:
+  port: 8087
+
+spring:
+  config:
+    activate:
+      on-profile: local
+  kafka:
+    # Single source of truth: root .env (see manage-services.sh)
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: kafka-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    admin:
+      properties:
+        auto.create.topics.enable: true
+
+# Topic topology owned by this service (see KafkaConfig). Declared explicitly so
+# topic creation does not depend on whichever service starts first.
+app:
+  kafka:
+    partitions: 1
+    replicas: 1
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
