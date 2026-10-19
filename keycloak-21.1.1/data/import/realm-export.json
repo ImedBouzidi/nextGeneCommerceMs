@@ -1,0 +1,108 @@
+{
+  "realm": "e-commerce",
+  "enabled": true,
+  "displayName": "BuyMe",
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "registrationAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "CLIENT",
+        "description": "Standard shopper"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Backoffice administrator"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "auth-service",
+      "name": "BuyMe Auth Register Service",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "replace-with-auth-register-service-client-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "cart-service",
+      "name": "BuyMe Cart Service",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "replace-with-cart-service-client-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "catalogue-service",
+      "name": "BuyMe Catalogue Service",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "replace-with-catalogue-service-client-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "order-service",
+      "name": "BuyMe Order Service",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "replace-with-order-service-client-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "payment-service",
+      "name": "BuyMe Payment Service",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "replace-with-payment-service-client-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "ecommerce-frontend",
+      "name": "BuyMe Web Frontend",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://angular-front:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://angular-front:4200"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}
