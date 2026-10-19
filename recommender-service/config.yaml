@@ -1,0 +1,5 @@
+# Recommender local configuration
+catalogue_url: http://localhost:8081
+database_url: sqlite:////app/recommender.db
+products_path: recommender-service/data/products.json
+refresh_interval_sec: 30

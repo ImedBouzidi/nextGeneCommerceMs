@@ -1,0 +1,8 @@
+Flask==2.3.2
+scikit-learn==1.5.2  # or latest 1.8.0 if you want cutting-edge
+numpy==2.1.3         # from NumPy 2.x series, fully supports Python 3.12-3.14
+pandas==2.2.3        # minor update, compatible
+SQLAlchemy==2.0.45
+psycopg2-binary==2.9.11
+requests==2.31.0
+PyYAML==6.0.3

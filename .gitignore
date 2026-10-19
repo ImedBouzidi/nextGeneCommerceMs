@@ -24,6 +24,12 @@ yarn-error.log*
 **/.env.*
 !**/.env.example
 
+# Python virtual environments
+**/.venv/
+**/venv/
+**/env/
+**/ENV/
+
 # Maven/Gradle build outputs
 **/target/
 **/build/

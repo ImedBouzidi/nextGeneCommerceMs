@@ -1,0 +1,194 @@
+services:
+  eureka-server:
+    build:
+      context: ./eureka-server
+      args:
+        REGISTRY: ${REGISTRY}
+    container_name: ecom-eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    restart: unless-stopped
+    networks:
+      - micro-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8761 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      args:
+        REGISTRY: ${REGISTRY}
+    container_name: ecom-api-gateway
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    restart: unless-stopped
+    networks:
+      - micro-net
+
+  auth-register-service:
+    build:
+      context: ./auth-register-service
+      args:
+        REGISTRY: ${REGISTRY}
+    container_name: auth-register-service
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./auth-register-service/.env
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      DB_HOST: postgres
+      KEYCLOAK_URL: http://keycloak:8080
+    restart: unless-stopped
+    networks:
+      - micro-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - ./auth-register-service/.env
+      - ./cart-service/.env
+      - ./catalogue-service/.env
+      - ./order-service/.env
+      - ./payment-service/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+    networks:
+      - micro-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: keycloak
+    command: ["start-dev", "--import-realm"]
+    env_file:
+      - ./keycloak/.env
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+    ports:
+      - "8090:8080"
+    networks:
+      - micro-net
+
+  frontend:
+    build:
+      context: ./BuyMeFront
+      args:
+        REGISTRY: ${REGISTRY}
+    container_name: angular-front
+    ports:
+      - "4200:4200"
+    environment:
+      API_URL: http://api-gateway:8081
+    depends_on:
+      - api-gateway
+    networks:
+      - micro-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - micro-net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    networks:
+      - micro-net
+
+  recommender-service:
+    build:
+      context: ./recommender-service
+      args:
+        REGISTRY: ${REGISTRY}
+    container_name: recommender-service
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    networks:
+      - micro-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  customer-segmentation-service:
+    build:
+      context: ./customer-segmentation-service
+      args:
+        REGISTRY: ${REGISTRY}
+    container_name: customer-segmentation-service
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "5001:5000"
+    restart: unless-stopped
+    networks:
+      - micro-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+networks:
+  micro-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
