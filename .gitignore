@@ -1,8 +1,5 @@
 # Dependencies
 buyme-front/node_modules/
-
-# Build outputs
-buyme-front/dist/
 buyme_mobile/build/
 
 # IDE and editor files
