@@ -17,6 +17,7 @@ import { AdminDashboardComponent } from './components/admin/dashboard/admin-dash
 import { AdminLayoutComponent } from './components/admin/admin-layout/admin-layout.component';
 import { PaymentsComponent } from './components/admin/payments/payments.component';
 import { AccountComponent } from './components/admin/account/account.component';
+import { ManageClientsComponent } from './components/admin/manageclients/manageclients.component';
 import { adminGuard } from './core/admin.guard';
 
 export const routes: Routes = [
@@ -54,6 +55,7 @@ export const routes: Routes = [
       { path: 'products', component: ManageproductComponent },
       // Categories share the catalogue page, which owns both sections via a tab.
       { path: 'categories', component: ManageproductComponent },
+      { path: 'clients', component: ManageClientsComponent },
       { path: 'payments', component: PaymentsComponent },
       { path: 'account', component: AccountComponent },
 

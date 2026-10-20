@@ -5,7 +5,7 @@ cd /app
 # Overwrite runtime config
 cat <<EOF > ./src/assets/config/config.json
 {
-  "apiUrl": "${API_URL:-http://localhost:8080}"
+  "apiUrl": "${API_URL:-http://api-gateway:8081}"
 }
 EOF
 

@@ -29,6 +29,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     { path: '/admin/orders', label: 'Orders', hint: 'Review and approve orders', icon: 'fa-receipt' },
     { path: '/admin/products', label: 'Products', hint: 'Add, edit and remove items', icon: 'fa-boxes-stacked' },
     { path: '/admin/categories', label: 'Categories', hint: 'Group the catalogue', icon: 'fa-layer-group' },
+    { path: '/admin/clients', label: 'Clients', hint: 'Top buyers, insights & coupons', icon: 'fa-users' },
     { path: '/admin/payments', label: 'Payments', hint: 'Transaction history', icon: 'fa-credit-card' },
   ];
 

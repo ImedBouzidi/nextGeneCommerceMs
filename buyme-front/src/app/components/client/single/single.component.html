@@ -169,6 +169,16 @@
             </span>
             <span class="bm-small bm-muted">{{ selectedRating ? selectedRating + ' / 5' : 'Pick a rating' }}</span>
           </div>
+          <div class="single-review-form">
+            <textarea class="bm-input" 
+                      [(ngModel)]="reviewComment" 
+                      placeholder="Write your review (min 5 characters)..."
+                      rows="3"
+                      maxlength="1000"></textarea>
+            <div class="bm-small bm-muted" *ngIf="reviewComment.length > 0">
+              {{ reviewComment.length }} / 1000 characters
+            </div>
+          </div>
           <button type="button" class="bm-btn bm-btn-outline bm-btn-sm" (click)="submitReview()">
             <i class="fa-solid fa-paper-plane"></i> Submit Rating
           </button>

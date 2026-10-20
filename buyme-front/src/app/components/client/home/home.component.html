@@ -57,34 +57,48 @@
         <span class="section-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> AI-Powered</span>
         <h2 class="section-title">Recommended For You</h2>
       </div>
-    </div>
-
-    <div class="rec-card" *ngIf="getCurrentRecommendation() as rec" [style.opacity]="recommendationFade ? 1 : 0">
-      <div class="rec-image-wrap">
-        <img [src]="getProductImage(rec)" (error)="onImageError($event)" [alt]="rec.name" class="rec-image" />
-        <span class="rec-badge-overlay"><i class="fa-solid fa-star"></i> Pick for You</span>
-      </div>
-      <div class="rec-info">
-        <h3 class="rec-name">{{ rec.name }}</h3>
-        <p class="rec-desc">{{ rec.description | slice:0:150 }}<span
-            *ngIf="(rec.description?.length || 0) > 150">…</span></p>
-        <div class="rec-meta">
-          <span class="rec-price">{{ rec.price | currency }}</span>
-          <span class="rec-stock"><i class="fa-solid fa-circle-check"></i> {{ rec.quantity }} in stock</span>
-        </div>
-        <div class="rec-actions">
-          <a [routerLink]="['/client/single', rec.id]" class="btn-primary-sm"><i class="fa-solid fa-eye"></i> View</a>
-          <button class="btn-outline-sm" (click)="addToCart(rec)" [disabled]="isInCart(rec) || rec.quantity === 0">
-            <i class="fa-solid fa-cart-plus"></i>
-            <span *ngIf="!isInCart(rec)">Add to Cart</span>
-            <span *ngIf="isInCart(rec)">In Cart</span>
-          </button>
-        </div>
+      <div class="rec-nav" *ngIf="recommendedProducts.length > 4">
+        <button class="nav-btn" (click)="prevRecommendationPage()" [disabled]="recommendationPage === 0" aria-label="Previous">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="rec-page-info">{{ recommendationPage + 1 }} / {{ totalRecommendationPages }}</span>
+        <button class="nav-btn" (click)="nextRecommendationPage()" [disabled]="recommendationPage >= totalRecommendationPages - 1" aria-label="Next">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
     </div>
 
-    <!-- Dots -->
-    <div class="rec-dots" *ngIf="recommendedProducts.length > 1">
+    <div class="rec-grid" [style.opacity]="recommendationFade ? 1 : 0">
+      <div *ngFor="let rec of getVisibleRecommendations(); trackBy: trackByProduct" class="rec-item">
+        <div class="rec-image-wrap">
+          <img [src]="getProductImage(rec)" (error)="onImageError($event)" [alt]="rec.name" class="rec-image" />
+          <span class="rec-badge-overlay"><i class="fa-solid fa-star"></i> Pick for You</span>
+          <a [routerLink]="['/client/single', rec.id]" class="rec-quick-view" title="View Details">
+            <i class="fa-solid fa-eye"></i>
+          </a>
+        </div>
+        <div class="rec-info">
+          <h3 class="rec-name">{{ rec.name }}</h3>
+          <p class="rec-desc">{{ rec.description | slice:0:100 }}<span
+              *ngIf="(rec.description?.length || 0) > 100">…</span></p>
+          <div class="rec-meta">
+            <span class="rec-price">{{ rec.price | currency }}</span>
+            <span class="rec-stock"><i class="fa-solid fa-circle-check"></i> {{ rec.quantity }} in stock</span>
+          </div>
+          <div class="rec-actions">
+            <a [routerLink]="['/client/single', rec.id]" class="btn-primary-sm"><i class="fa-solid fa-eye"></i> View</a>
+            <button class="btn-outline-sm" (click)="addToCart(rec)" [disabled]="isInCart(rec) || rec.quantity === 0">
+              <i class="fa-solid fa-cart-plus"></i>
+              <span *ngIf="!isInCart(rec)">Add to Cart</span>
+              <span *ngIf="isInCart(rec)">In Cart</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dots (mobile fallback) -->
+    <div class="rec-dots" *ngIf="recommendedProducts.length > 1 && recommendedProducts.length <= 4">
       <button *ngFor="let p of recommendedProducts; let i = index" class="dot"
         [class.active]="i === currentRecommendationIndex" (click)="goToRecommendation(i)"
         [attr.aria-label]="'Rec ' + (i+1)"></button>

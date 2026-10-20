@@ -12,7 +12,7 @@ export class RegisterService {
     private http: HttpClient,
     @Inject(APP_CONFIG) private config: any
   ) {
-    this.apiUrl = `${this.config.apiUrl}/auth`;
+    this.apiUrl = `${this.config.apiUrl}/api/auth`;
   }
 
   register(userData: FormData): Observable<RegisterResponse> {

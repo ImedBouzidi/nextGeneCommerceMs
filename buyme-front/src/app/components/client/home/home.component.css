@@ -1042,13 +1042,223 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .p-card {
-    animation: none;
-    opacity: 1;
-  }
+/* ── Recommendations Grid ── */
+.rec-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  .fab-cart {
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-med);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all .2s var(--ease-smooth);
+}
+
+.nav-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border-glow);
+  background: var(--accent-dim);
+}
+
+.nav-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.rec-page-info {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  transition: opacity .16s var(--ease-smooth);
+}
+
+.rec-item {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  transition: border-color .25s var(--ease-smooth), transform .25s var(--ease-smooth), background .25s var(--ease-smooth);
+}
+
+.rec-item:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-glow);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.rec-image-wrap {
+  position: relative;
+  height: 180px;
+  overflow: hidden;
+  background: var(--bg-faint);
+}
+
+.rec-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rec-quick-view {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(10, 10, 15, .78);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: all .25s var(--ease-smooth);
+}
+
+.rec-item:hover .rec-quick-view {
+  opacity: 1;
+  transform: none;
+}
+
+.rec-quick-view:hover {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.rec-badge-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+  background: rgba(10, 10, 15, .8);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-glow);
+  color: var(--accent-light);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.rec-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  flex: 1;
+}
+
+.rec-name {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rec-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rec-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.rec-price {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+}
+
+.rec-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-green);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.rec-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 860px) {
+  .rec-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .rec-nav {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .rec-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rec-grid,
+  .rec-item {
     transition: none;
   }
 }

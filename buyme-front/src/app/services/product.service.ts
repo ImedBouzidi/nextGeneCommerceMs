@@ -10,7 +10,7 @@ export class ProductService {
   private apiUrl: string;
 
   constructor(private http: HttpClient, @Inject(APP_CONFIG) private config: any) {
-    this.apiUrl = `${this.config.apiUrl}/products`;
+    this.apiUrl = `${this.config.apiUrl}/api/products`;
   }
 
   getAll(): Observable<any[]> {

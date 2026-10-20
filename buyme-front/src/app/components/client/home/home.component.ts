@@ -11,6 +11,7 @@ import { CartService, CartItem } from '../../../services/cart.service';
 import { RecommenderService } from '../../../services/recommender.service';
 import { UserService } from '../../../services/user.service';
 import { CustomerSegmentationService, Promotion } from '../../../services/customer-segmentation.service';
+import { OrderService } from '../../../services/order.service';
 import { APP_CONFIG } from '../../../../main';
 import { PRODUCT_PLACEHOLDER, productImageBaseUrl, productImageUrl, useImageFallback } from '../../../shared/product-image-url';
 import { ModalService } from '../../../shared/modal.service';
@@ -75,6 +76,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   promotionRotationInterval: any = null;
   recommendationRotationInterval: any = null;
   recommendationFade = true;
+  // Grid pagination for recommendations
+  recommendationPage = 0;
+  readonly recsPerPage = 4;
 
 
   // user id extracted from JWT 'sub' claim (if available)
@@ -91,6 +95,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private readonly recommenderService: RecommenderService,
     private readonly userService: UserService,
     private readonly segmentationService: CustomerSegmentationService,
+    private readonly orderService: OrderService,
     private readonly router: Router,
     private readonly modalService: ModalService,
     private readonly authStorage: AuthStorageService,
@@ -324,24 +329,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     
     this.loadingRecommendations = true;
     
-    // Get user's cart history (product IDs they've interacted with)
+    // Build history from cart + orders (for authenticated users)
     const cartItems = this.cartService.getItems();
-    const history = cartItems.map(item => item.productId);
+    const cartHistory = cartItems.map(item => item.productId);
     
-    const loadRecommendations = (userId?: number | string): void => {
-      this.recommenderService.getRecommendations(history, 5, userId).subscribe({
+    const loadRecommendations = (userId?: number | string, orderHistory: number[] = []): void => {
+      // Combine cart history with order history (deduplicate)
+      const combinedHistory = [...new Set([...cartHistory, ...orderHistory])];
+      
+      this.recommenderService.getRecommendations(combinedHistory, 8, userId).subscribe({
         next: (response) => {
           const recommendedIds = response.recommendations || [];
           this.recommendedProducts = recommendedIds
             .map((id: number) => this.allProducts.find(p => String(p.id) === String(id)))
             .filter((p: Product | undefined): p is Product => p !== undefined)
-            .slice(0, 5);
+            .slice(0, 8); // Show up to 8 for grid
           this.loadingRecommendations = false;
           this.recommendationFade = true;
+          this.recommendationPage = 0; // Reset to first page
           this.startRecommendationRotation();
         },
         error: (err) => {
-          console.error('[Home] recommendations failed', { history, userId, error: err });
+          console.error('[Home] recommendations failed', { history: combinedHistory, userId, error: err });
           this.recommendedProducts = [];
           this.loadingRecommendations = false;
           this.softError = 'Unable to load recommendations.';
@@ -355,7 +364,22 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
 
     this.userService.getCurrentUser().subscribe({
-      next: (user) => loadRecommendations(user?.id),
+      next: (user) => {
+        // Fetch order history to enrich recommendations
+        if (user?.id) {
+          this.orderService.getMyOrders().subscribe({
+            next: (orders) => {
+              const orderProductIds = orders
+                .filter(o => o.productId)
+                .map(o => o.productId);
+              loadRecommendations(user.id, orderProductIds);
+            },
+            error: () => loadRecommendations(user.id)
+          });
+        } else {
+          loadRecommendations();
+        }
+      },
       error: () => loadRecommendations()
     });
   }
@@ -451,6 +475,36 @@ export class HomeComponent implements OnInit, OnDestroy {
       return this.recommendedProducts[this.currentRecommendationIndex];
     }
     return null;
+  }
+
+  // Grid pagination for recommendations
+  get totalRecommendationPages(): number {
+    return Math.ceil(this.recommendedProducts.length / this.recsPerPage);
+  }
+
+  getVisibleRecommendations(): Product[] {
+    const start = this.recommendationPage * this.recsPerPage;
+    return this.recommendedProducts.slice(start, start + this.recsPerPage);
+  }
+
+  nextRecommendationPage(): void {
+    if (this.recommendationPage < this.totalRecommendationPages - 1) {
+      this.recommendationFade = false;
+      setTimeout(() => {
+        this.recommendationPage++;
+        this.recommendationFade = true;
+      }, 160);
+    }
+  }
+
+  prevRecommendationPage(): void {
+    if (this.recommendationPage > 0) {
+      this.recommendationFade = false;
+      setTimeout(() => {
+        this.recommendationPage--;
+        this.recommendationFade = true;
+      }, 160);
+    }
   }
 
   // Navigation methods for promotions

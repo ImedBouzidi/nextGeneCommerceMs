@@ -28,8 +28,8 @@ export class UserService {
     private http: HttpClient,
     @Inject(APP_CONFIG) private config: any
   ) {
-    this.apiUrl = `${this.config.apiUrl}/auth`;
-    this.profilePicBaseUrl = `${this.config.apiUrl}/uploads/profiles-pics`;
+    this.apiUrl = `${this.config.apiUrl}/api/auth`;
+    this.profilePicBaseUrl = `${this.config.apiUrl}/api/uploads/profiles-pics`;
   }
 
   // Try common endpoints for fetching the current user. Some backends expose /auth/me, others use /auth/profile or /users/me.

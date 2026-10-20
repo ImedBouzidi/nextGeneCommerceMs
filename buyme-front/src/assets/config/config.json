@@ -1,5 +1,5 @@
 {
-  "apiUrl": "http://api-gateway:8081",
+  "apiUrl": "http://localhost:8081",
   "realm": "e-commerce",
   "issuer": "http://localhost:8080/realms/e-commerce",
   "stripePublishableKey": "",

@@ -18,7 +18,7 @@ export class LoginService {
     private authStorage: AuthStorageService,
     @Inject(APP_CONFIG) private config: any
   ) {
-    this.apiUrl = `${this.config.apiUrl}/auth`;
+    this.apiUrl = `${this.config.apiUrl}/api/auth`;
 }
 
 login(email: string, password: string): Observable<any> {

@@ -1,0 +1,354 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     Manage Clients — Admin Console
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div class="mc-shell">
+  <!-- ── Header ── -->
+  <header class="mc-header">
+    <div>
+      <h1 class="mc-title">Clients Management</h1>
+      <p class="mc-subtitle">Overview of top buyers, customer insights & coupon assignment</p>
+    </div>
+    <div class="mc-header-actions">
+      <button class="btn-secondary" (click)="loadTopCustomers()" [disabled]="loading">
+        <i class="fa-solid fa-rotate-left"></i> Refresh
+      </button>
+      <button class="btn-primary" (click)="openSegmentationModal()" [disabled]="segmentationLoading">
+        <i class="fa-solid fa-brain"></i> Run Segmentation
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Error banner ── -->
+  <div *ngIf="error" class="mc-banner mc-banner--error">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <span>{{ error }}</span>
+    <button class="mc-banner-close" (click)="error = null" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <!-- ── Top Customers Table ── -->
+  <section class="mc-section">
+    <div class="mc-section-head">
+      <h2 class="mc-section-title">Top Buyers</h2>
+      <div class="mc-section-controls">
+        <label class="mc-select-wrap">
+          <select [(ngModel)]="selectedSort" (ngModelChange)="onSortChange()" [disabled]="loading" class="mc-select">
+            @for (opt of sortOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+        </label>
+        <label class="mc-select-wrap">
+          <select [(ngModel)]="showTopCustomers" (ngModelChange)="onLimitChange()" [disabled]="loading" class="mc-select">
+            <option [value]="10">Top 10</option>
+            <option [value]="20">Top 20</option>
+            <option [value]="50">Top 50</option>
+            <option [value]="100">Top 100</option>
+          </select>
+          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+        </label>
+      </div>
+    </div>
+
+    @if (loading) {
+      <div class="mc-table-skeleton">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="mc-row-skeleton"></div>
+        }
+      </div>
+    } @else if (topCustomers.length === 0) {
+      <div class="mc-empty">
+        <i class="fa-solid fa-users"></i>
+        <p>No customer data available.</p>
+        <button class="btn-primary" (click)="openSegmentationModal()">Generate test data & run segmentation</button>
+      </div>
+    } @else {
+      <div class="mc-table-wrap">
+        <table class="mc-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Customer ID</th>
+              <th>Segment</th>
+              <th>Total Spend</th>
+              <th>Orders</th>
+              <th>Avg Rating</th>
+              <th>Engagement</th>
+              <th>Last Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (customer of topCustomers; track customer.customer_id; let idx = $index) {
+              <tr (click)="viewCustomerDetail(customer)" class="mc-row" [style.cursor]="'pointer'">
+                <td class="mc-rank">{{ idx + 1 }}</td>
+                <td class="mc-id">{{ customer.customer_id }}</td>
+                <td>
+                  <span class="mc-segment-badge" [class]="getSegmentClass('')">
+                    {{ getSegmentLabel(customer) }}
+                  </span>
+                </td>
+                <td class="mc-monetary">{{ formatCurrency(customer.monetary) }}</td>
+                <td class="mc-frequency">{{ formatNumber(customer.frequency) }}</td>
+                <td class="mc-rating">{{ customer.avg_rating.toFixed(1) }} <i class="fa-solid fa-star text-amber"></i></td>
+                <td>
+                  <div class="mc-score-bar">
+                    <div class="mc-score-fill" [class]="getScoreClass(customer.engagement_score)" [style.width.%]="customer.engagement_score * 100"></div>
+                  </div>
+                  <span class="mc-score-value">{{ (customer.engagement_score * 100).toFixed(0) }}%</span>
+                </td>
+                <td class="mc-recency">{{ customer.recency }} days ago</td>
+                <td>
+                  <div class="mc-actions">
+                    <button class="mc-action-btn" (click)="$event.stopPropagation(); viewCustomerDetail(customer)" title="View details">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button class="mc-action-btn mc-action-btn--coupon" (click)="$event.stopPropagation(); openCouponModal(customer)" title="Assign coupon">
+                      <i class="fa-solid fa-ticket"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="mc-caption">Showing {{ topCustomers.length }} of {{ totalCustomers }} customers. Click a row to view details.</p>
+    }
+  </section>
+
+  <!-- ── Promotions / Coupons ── -->
+  @if (promotions.length > 0) {
+    <section class="mc-section mc-section--promo">
+      <div class="mc-section-head">
+        <h2 class="mc-section-title">Active Promotions & Coupons</h2>
+      </div>
+      <div class="mc-promo-grid">
+        @for (promo of promotions; track promo.customer_id + promo.segment) {
+          <div class="mc-promo-card" [class]="getSegmentClass(promo.segment)">
+            <div class="mc-promo-head">
+              <span class="mc-promo-segment">{{ promo.segment }}</span>
+              <span class="mc-promo-pct">{{ promo.discount_percent || promo.discount_pct }}%</span>
+            </div>
+            <div class="mc-promo-body">
+              <div class="mc-promo-customer">{{ promo.display_name || promo.customer_id }}</div>
+              <div class="mc-promo-loyalty">Loyalty: {{ (promo.loyalty_score * 100).toFixed(0) }}%</div>
+            </div>
+            <div class="mc-promo-foot">
+              <button class="btn-primary btn-sm" (click)="viewCustomerDetailByPromo(promo)">
+                <i class="fa-solid fa-user"></i> View Client
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- ── Client Detail Drawer ── -->
+  @if (selectedCustomer) {
+    <aside class="mc-drawer" role="dialog" aria-labelledby="mc-drawer-title">
+      <div class="mc-drawer-header">
+        <h2 id="mc-drawer-title" class="mc-drawer-title">Client Details</h2>
+        <button class="mc-drawer-close" (click)="closeDetail()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      @if (detailLoading) {
+        <div class="mc-drawer-loading"><div class="spinner"></div><p>Loading client data…</p></div>
+      } @else if (detailError) {
+        <div class="mc-drawer-error"><i class="fa-solid fa-triangle-exclamation"></i><p>{{ detailError }}</p></div>
+      } @else if (customerDetail) {
+        <div class="mc-drawer-content">
+          <!-- Profile -->
+          <div class="mc-detail-section">
+            <h3><i class="fa-solid fa-user-circle"></i> Profile</h3>
+            <dl class="mc-detail-grid">
+              <dt>Customer ID</dt><dd>{{ customerDetail.customer.customer_id }}</dd>
+              <dt>Segment</dt><dd><span class="mc-segment-badge" [class]="getSegmentClass('')">{{ getSegmentLabel(customerDetail.customer) }}</span></dd>
+              <dt>Engagement Score</dt><dd>{{ (customerDetail.customer.engagement_score * 100).toFixed(1) }}%</dd>
+              <dt>Buying Score</dt><dd>{{ (customerDetail.customer.buying_score * 100).toFixed(1) }}%</dd>
+              <dt>Rating Score</dt><dd>{{ (customerDetail.customer.rating_score * 100).toFixed(1) }}%</dd>
+              <dt>Interaction Score</dt><dd>{{ (customerDetail.customer.interaction_score * 100).toFixed(1) }}%</dd>
+            </dl>
+          </div>
+
+          <!-- RFM Metrics -->
+          <div class="mc-detail-section">
+            <h3><i class="fa-solid fa-chart-line"></i> RFM Metrics</h3>
+            <dl class="mc-detail-grid">
+              <dt>Recency</dt><dd>{{ customerDetail.customer.recency }} days since last order</dd>
+              <dt>Frequency</dt><dd>{{ formatNumber(customerDetail.customer.frequency) }} orders</dd>
+              <dt>Monetary</dt><dd>{{ formatCurrency(customerDetail.customer.monetary) }}</dd>
+              <dt>Avg Order Value</dt><dd>{{ formatCurrency(customerDetail.customer.monetary / (customerDetail.customer.frequency || 1)) }}</dd>
+            </dl>
+          </div>
+
+          <!-- Orders -->
+          <div class="mc-detail-section">
+            <h3><i class="fa-solid fa-receipt"></i> Orders ({{ customerDetail.orders.length || 0 }})</h3>
+            @if (customerDetail.orders && customerDetail.orders.length > 0) {
+              <div class="mc-orders-list">
+                @for (order of customerDetail.orders.slice(0, 10); track order.order_id || order.id) {
+                  <div class="mc-order-item">
+                    <span class="mc-order-id">#{{ order.order_id || order.id }}</span>
+                    <span class="mc-order-date">{{ order.order_date || order.orderDate | date:'mediumDate' }}</span>
+                    <span class="mc-order-status" [class]="getStatusClass(order.status)">{{ order.status }}</span>
+                    <span class="mc-order-amount">{{ formatCurrency(order.amount || order.total || 0) }}</span>
+                  </div>
+                }
+                @if (customerDetail.orders.length > 10) {
+                  <p class="mc-more-link">+ {{ customerDetail.orders.length - 10 }} more orders</p>
+                }
+              </div>
+            } @else {
+              <p class="mc-empty-small">No orders found.</p>
+            }
+          </div>
+
+          <!-- Ratings -->
+          <div class="mc-detail-section">
+            <h3><i class="fa-solid fa-star"></i> Ratings ({{ customerDetail.ratings.length || 0 }})</h3>
+            @if (customerDetail.ratings && customerDetail.ratings.length > 0) {
+              <div class="mc-ratings-list">
+                @for (rating of customerDetail.ratings.slice(0, 5); track rating.rating_id || rating.id) {
+                  <div class="mc-rating-item">
+                    <div class="mc-rating-stars">{{ '★'.repeat(rating.rating || 0) }}{{ '☆'.repeat(5 - (rating.rating || 0)) }}</div>
+                    <p class="mc-rating-comment">{{ rating.comment || rating.review || 'No comment' }}</p>
+                    <span class="mc-rating-date">{{ rating.rating_date || rating.ratingDate | date:'mediumDate' }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="mc-empty-small">No ratings given.</p>
+            }
+          </div>
+
+          <!-- Interactions -->
+          <div class="mc-detail-section">
+            <h3><i class="fa-solid fa-mouse-pointer"></i> Interactions ({{ customerDetail.interactions.length || 0 }})</h3>
+            @if (customerDetail.interactions && customerDetail.interactions.length > 0) {
+              <div class="mc-interactions-summary">
+                <div class="mc-interaction-stat">
+                  <span class="mc-interaction-label">Views</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_views) }}</span>
+                </div>
+                <div class="mc-interaction-stat">
+                  <span class="mc-interaction-label">Clicks</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_clicks) }}</span>
+                </div>
+                <div class="mc-interaction-stat">
+                  <span class="mc-interaction-label">Cart Adds</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_cart_adds) }}</span>
+                </div>
+                <div class="mc-interaction-stat">
+                  <span class="mc-interaction-label">Wishlist</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_wishlist) }}</span>
+                </div>
+                <div class="mc-interaction-stat">
+                  <span class="mc-interaction-label">Avg Session</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.avg_session_duration) }}s</span>
+                </div>
+              </div>
+            } @else {
+              <p class="mc-empty-small">No interactions recorded.</p>
+            }
+          </div>
+
+          <!-- Assign Coupon -->
+          <div class="mc-detail-section mc-detail-section--action">
+            <h3><i class="fa-solid fa-ticket"></i> Assign Coupon</h3>
+            <div class="mc-coupon-form">
+              <div class="mc-form-row">
+                <label>Discount %</label>
+                <input type="number" [(ngModel)]="couponDiscountPct" min="1" max="100" class="mc-input" placeholder="10">
+              </div>
+              <div class="mc-form-row">
+                <label>Note</label>
+                <input type="text" [(ngModel)]="couponNote" class="mc-input" placeholder="Reason for discount">
+              </div>
+              <button class="btn-primary" (click)="assignCoupon()" [disabled]="assigningCoupon">
+                @if (assigningCoupon) {
+                  <i class="fa-solid fa-spinner fa-spin"></i> Assigning…
+                } @else {
+                  <i class="fa-solid fa-ticket"></i> Assign Coupon
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </aside>
+
+    <div class="mc-drawer-backdrop" (click)="closeDetail()" aria-hidden="true"></div>
+  }
+
+  <!-- ── Segmentation Modal ── -->
+  @if (showSegmentationModal) {
+    <div class="mc-modal-backdrop" (click)="closeSegmentationModal()" aria-hidden="true"></div>
+    <div class="mc-modal" role="dialog" aria-labelledby="mc-modal-title">
+      <div class="mc-modal-header">
+        <h2 id="mc-modal-title"><i class="fa-solid fa-brain"></i> Run Customer Segmentation</h2>
+        <button class="mc-modal-close" (click)="closeSegmentationModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="mc-modal-body">
+        @if (segmentationError) {
+          <div class="mc-alert mc-alert--error">{{ segmentationError }}</div>
+        }
+        <p class="mc-modal-desc">This will analyze all customers using K-means clustering and assign segment-based discounts. Existing promotions will be replaced.</p>
+        <div class="mc-form-row">
+          <label>Number of clusters</label>
+          <input type="number" [(ngModel)]="segmentationRequest.n_clusters" min="2" max="10" class="mc-input">
+        </div>
+        <div class="mc-form-row mc-form-row--checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="segmentationRequest.send">
+            <span>Send promotions via Kafka (requires Kafka bootstrap)</span>
+          </label>
+        </div>
+      </div>
+      <div class="mc-modal-footer">
+        <button class="btn-secondary" (click)="closeSegmentationModal()" [disabled]="segmentationLoading">Cancel</button>
+        <button class="btn-primary" (click)="runSegmentation()" [disabled]="segmentationLoading">
+          @if (segmentationLoading) {
+            <i class="fa-solid fa-spinner fa-spin"></i> Running…
+          } @else {
+            <i class="fa-solid fa-play"></i> Run Segmentation
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Coupon Modal ── -->
+  @if (couponCustomerId) {
+    <div class="mc-modal-backdrop" (click)="closeCouponModal()" aria-hidden="true"></div>
+    <div class="mc-modal mc-modal--small" role="dialog" aria-labelledby="mc-coupon-title">
+      <div class="mc-modal-header">
+        <h2 id="mc-coupon-title"><i class="fa-solid fa-ticket"></i> Assign Coupon</h2>
+        <button class="mc-modal-close" (click)="closeCouponModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="mc-modal-body">
+        <p>Assign a manual discount coupon to <strong>{{ couponCustomerId }}</strong>.</p>
+        <div class="mc-form-row">
+          <label>Discount %</label>
+          <input type="number" [(ngModel)]="couponDiscountPct" min="1" max="100" class="mc-input">
+        </div>
+        <div class="mc-form-row">
+          <label>Note</label>
+          <input type="text" [(ngModel)]="couponNote" class="mc-input" placeholder="Reason for discount">
+        </div>
+      </div>
+      <div class="mc-modal-footer">
+        <button class="btn-secondary" (click)="closeCouponModal()" [disabled]="assigningCoupon">Cancel</button>
+        <button class="btn-primary" (click)="assignCoupon()" [disabled]="assigningCoupon">
+          @if (assigningCoupon) {
+            <i class="fa-solid fa-spinner fa-spin"></i> Assigning…
+          } @else {
+            <i class="fa-solid fa-ticket"></i> Assign Coupon
+          }
+        </button>
+      </div>
+    </div>
+  }
+</div>

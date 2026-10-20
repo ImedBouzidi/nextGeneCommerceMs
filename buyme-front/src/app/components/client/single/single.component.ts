@@ -1,6 +1,7 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../services/product.service';
 import { CartService } from '../../../services/cart.service';
 import { ReviewService } from '../../../services/review.service';
@@ -13,7 +14,7 @@ import { productImageBaseUrl, productImageUrl, useImageFallback } from '../../..
 @Component({
   selector: 'app-single',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './single.component.html',
   styleUrls: ['./single.component.css']
 })
@@ -186,6 +187,8 @@ export class SingleComponent implements OnInit {
     this.selectedRating = n;
   }
 
+  reviewComment = '';
+
   submitReview(): void {
     if (!this.isAuthenticated) {
       this.modalService.showAlert('You must be logged in to submit a rating.', 'Login required');
@@ -195,10 +198,15 @@ export class SingleComponent implements OnInit {
       this.modalService.showAlert('Please select a rating between 1 and 5 stars.', 'Invalid rating');
       return;
     }
-    const payload = { rating: this.selectedRating };
+    if (!this.reviewComment || this.reviewComment.trim().length < 5) {
+      this.modalService.showAlert('Please write a review comment (at least 5 characters).', 'Invalid comment');
+      return;
+    }
+    const payload = { rating: this.selectedRating, comment: this.reviewComment.trim(), productId: this.product.id };
     this.reviewService.addReview(this.product.id, payload).subscribe({
       next: () => {
         this.selectedRating = 0;
+        this.reviewComment = '';
         this.loadReviews();
         this.productService.getById(this.product.id).subscribe(p => this.product = p);
         this.showSuccessModal();
