@@ -1,5 +1,6 @@
 server:
-  port: 8087
+  # 8088: 8087 is the payment-service (the gateway routes /api/payments there).
+  port: 8088
 
 spring:
   application:

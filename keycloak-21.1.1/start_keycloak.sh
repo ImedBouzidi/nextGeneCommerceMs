@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KEYCLOAK_HOME="/home/imed/keycloak-21.1.1"
+KEYCLOAK_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="$KEYCLOAK_HOME/keycloak.log"
 
 echo "Starting Keycloak..."

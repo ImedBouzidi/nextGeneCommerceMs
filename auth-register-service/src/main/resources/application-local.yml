@@ -10,10 +10,12 @@ spring:
   config:
     activate:
       on-profile: local
+    import:
+      - file:./.env[.properties]
   # 💡 Correction: The 'application' property belongs directly under 'spring'
   application:
     name: auth-register-service
-  # Single source of truth: root .env (see manage-services.sh)
+  # Local credentials are loaded from auth-register-service/.env.
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
@@ -53,6 +55,11 @@ keycloak:
 app:
   upload:
     dir: /home/imed/Documents/e-commerce-ms/auth-register-service/uploads
+  admin:
+    seed:
+      enabled: ${BUYME_ADMIN_SEED_ENABLED:true}
+    email: ${BUYME_ADMIN_EMAIL}
+    password: ${BUYME_ADMIN_PASSWORD}
 eureka:
   client:
     register-with-eureka: true
