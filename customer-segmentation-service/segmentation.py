@@ -1,111 +1,9 @@
 import pandas as pd
-import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from datetime import datetime, timedelta
 import json
 import os
-import random
-from pathlib import Path
 from kafka import KafkaProducer
-
-
-def load_orders(path):
-    return pd.read_csv(path, parse_dates=['order_date'])
-
-
-def generate_synthetic_data(n_customers=50, max_orders_per_customer=15, days_span=365, products_count=20):
-    """Generate synthetic customers, orders, ratings, and interactions."""
-    rows_orders = []
-    rows_ratings = []
-    rows_interactions = []
-    order_id = 1
-    rating_id = 1
-    interaction_id = 1
-    today = datetime.now().date()
-    
-    # Product catalog
-    products = [f"prod_{i+1}" for i in range(products_count)]
-    product_prices = {p: round(random.uniform(10.0, 500.0), 2) for p in products}
-    product_categories = {p: random.choice(['Electronics', 'Clothing', 'Home', 'Sports', 'Books']) for p in products}
-    
-    for i in range(n_customers):
-        cust = f"cust_{i+1:03d}"
-        n_orders = random.randint(1, max_orders_per_customer)
-        
-        for _ in range(n_orders):
-            days_ago = random.randint(0, days_span)
-            order_date = today - timedelta(days=days_ago)
-            product = random.choice(products)
-            qty = random.randint(1, 3)
-            amount = round(product_prices[product] * qty * random.uniform(0.8, 1.2), 2)
-            
-            rows_orders.append({
-                'order_id': order_id,
-                'customer_id': cust,
-                'order_date': order_date.isoformat(),
-                'total_amount': amount,
-                'product_id': product,
-                'quantity': qty,
-                'category': product_categories[product]
-            })
-            order_id += 1
-            
-            # Generate rating for this order (70% chance)
-            if random.random() < 0.7:
-                rating = round(random.uniform(1.0, 5.0), 1)
-                rows_ratings.append({
-                    'rating_id': rating_id,
-                    'customer_id': cust,
-                    'product_id': product,
-                    'order_id': order_id - 1,
-                    'rating': rating,
-                    'rating_date': (order_date + timedelta(days=random.randint(1, 7))).isoformat()
-                })
-                rating_id += 1
-        
-        # Generate interactions (views, clicks, cart adds) independent of orders
-        n_interactions = random.randint(5, 50)
-        for _ in range(n_interactions):
-            days_ago = random.randint(0, days_span)
-            interaction_date = today - timedelta(days=days_ago)
-            interaction_type = random.choices(
-                ['view', 'click', 'cart_add', 'wishlist', 'search'],
-                weights=[0.4, 0.25, 0.15, 0.1, 0.1]
-            )[0]
-            product = random.choice(products)
-            rows_interactions.append({
-                'interaction_id': interaction_id,
-                'customer_id': cust,
-                'product_id': product,
-                'interaction_type': interaction_type,
-                'interaction_date': interaction_date.isoformat(),
-                'duration_seconds': random.randint(5, 300) if interaction_type == 'view' else None
-            })
-            interaction_id += 1
-    
-    return (
-        pd.DataFrame(rows_orders),
-        pd.DataFrame(rows_ratings),
-        pd.DataFrame(rows_interactions)
-    )
-
-
-def save_synthetic_data(orders_df, ratings_df, interactions_df, base_path):
-    """Save synthetic data to CSV files."""
-    base = Path(base_path)
-    base.mkdir(parents=True, exist_ok=True)
-    orders_df.to_csv(base / 'orders.csv', index=False)
-    ratings_df.to_csv(base / 'ratings.csv', index=False)
-    interactions_df.to_csv(base / 'interactions.csv', index=False)
-
-
-def load_ratings(path):
-    return pd.read_csv(path, parse_dates=['rating_date'])
-
-
-def load_interactions(path):
-    return pd.read_csv(path, parse_dates=['interaction_date'])
 
 
 def compute_rfm(orders, as_of=None):
@@ -234,11 +132,3 @@ def send_promotions(promotions, kafka_bootstrap=None, topic='promotions'):
         producer.send(topic, value=payload)
     producer.flush()
     producer.close()
-
-
-if __name__ == '__main__':
-    orders = load_orders('data/mock_orders.csv')
-    rfm = compute_rfm(orders)
-    seg, k, s = run_kmeans(rfm, n_clusters=3)
-    promos = assign_discounts(seg)
-    print(promos.to_json(orient='records', force_ascii=False))

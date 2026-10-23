@@ -10,6 +10,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import tn.iteam.authregisterservice.model.Admin;
 import tn.iteam.authregisterservice.model.Role;
 import tn.iteam.authregisterservice.model.User;
@@ -17,6 +18,7 @@ import tn.iteam.authregisterservice.repos.RoleRepository;
 import tn.iteam.authregisterservice.repos.UserRepository;
 
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -47,6 +49,7 @@ public class AdminUserSeeder implements ApplicationRunner {
     }
 
     @Override
+    @Transactional
     public void run(ApplicationArguments args) {
         if (email.isBlank() || password.isBlank()) {
             throw new IllegalStateException(
@@ -75,7 +78,9 @@ public class AdminUserSeeder implements ApplicationRunner {
             return newAdmin;
         });
 
-        user.setRoles(List.of(adminRole));
+        // Hibernate clears/replaces this collection when persisting the managed
+        // entity, so it must be mutable (List.of(...) throws on clear()).
+        user.setRoles(new ArrayList<>(List.of(adminRole)));
         userRepository.save(user);
         log.info("Seeded admin {} with roles {}",
                 email, user.getRoles().stream().map(Role::getName).toList());

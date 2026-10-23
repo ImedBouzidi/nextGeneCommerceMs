@@ -4,6 +4,14 @@ spring:
   application:
     name: catalogue-service
 
+  # Product images are uploaded straight from the admin UI. Spring Boot's
+  # defaults (1MB per file / 10MB per request) are far too small for camera
+  # photos and made POST /api/products fail with "Maximum upload size exceeded".
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
 jwt:
   secret: ${JWT_SECRET}
 

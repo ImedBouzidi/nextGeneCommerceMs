@@ -1,42 +1,78 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthStorageService } from './auth-storage.service';
+import { AuthRefreshService } from './auth-refresh.service';
+
+function isAuthEndpoint(url: string): boolean {
+  return (
+    url.includes('/api/auth/login') ||
+    url.includes('/api/auth/register') ||
+    url.includes('/api/auth/refresh') ||
+    url.endsWith('/auth/login') ||
+    url.endsWith('/auth/register') ||
+    url.endsWith('/auth/refresh')
+  );
+}
+
+function withToken<T>(req: HttpRequest<T>, token: string | null): HttpRequest<T> {
+  return token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+}
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  // Don't attach Authorization header for authentication endpoints
   const url = typeof req.url === 'string' ? req.url : '';
-  if (url.includes('/api/auth/login') || url.includes('/api/auth/register') || url.endsWith('/auth/login') || url.endsWith('/auth/register')) {
+
+  // Auth endpoints are the ones that mint tokens; never attach or refresh for them.
+  if (isAuthEndpoint(url)) {
     return next(req);
   }
 
   // Must be resolved synchronously: `inject` is only valid in the injection context.
   const authStorage = inject(AuthStorageService);
+  const authRefresh = inject(AuthRefreshService);
   const router = inject(Router);
 
-  // getValidToken() purges expired / foreign-realm tokens as a side effect and
-  // returns null, in which case we deliberately send no Authorization header at all.
+  // getValidToken() returns null for an expired token but keeps the refresh token
+  // around, so the 401 handler below can recover the session silently.
   const token = authStorage.getValidToken();
 
-  const authedReq = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
-
-  return next(authedReq).pipe(
+  return next(withToken(req, token)).pipe(
     catchError((err: HttpErrorResponse) => {
-      // Only treat a 401 as an expired session if we actually sent a token.
-      // An anonymous visitor getting 401 just means "that endpoint needs an
-      // account" — bouncing them to /login for browsing the storefront is wrong,
-      // and it used to happen whenever a public page called a protected endpoint.
-      if (err?.status === 401 && token) {
-        // The token was rejected by a service: it is unusable, drop it entirely
-        // so the app no longer looks authenticated.
+      if (err?.status !== 401) {
+        return throwError(() => err);
+      }
+
+      /*
+       * A 401 after the access token expired (or was rejected) is recoverable as
+       * long as Keycloak gave us a refresh token. Retry the original request once
+       * with the new token. The retry calls `next` directly, so it cannot loop
+       * back into this interceptor.
+       */
+      if (authStorage.getRefreshToken()) {
+        return authRefresh.refresh().pipe(
+          switchMap((newToken) => next(withToken(req, newToken))),
+          catchError((refreshErr) => {
+            authStorage.clearAllTokens();
+            if (!url.includes('/auth/login')) {
+              void router.navigate(['/login']);
+            }
+            return throwError(() => refreshErr);
+          })
+        );
+      }
+
+      // No refresh token: this is a genuine expired session (or an anonymous
+      // visitor hitting a protected endpoint). Only a user who used to be signed
+      // in should be bounced to the login page; anonymous storefront browsing
+      // must keep working.
+      if (token || authStorage.getRoles().length > 0) {
         authStorage.clearAllTokens();
         if (!url.includes('/auth/login')) {
           void router.navigate(['/login']);
         }
       }
+
       return throwError(() => err);
     })
   );

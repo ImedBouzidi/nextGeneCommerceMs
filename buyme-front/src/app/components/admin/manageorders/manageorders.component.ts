@@ -154,8 +154,8 @@ export class ManageordersComponent implements OnInit, OnDestroy {
     if (!id) return;
     if (order.status === 'APPROVED' || order.status === 'CANCELLED') return;
 
-    // Only require explicit force when payment FAILED. If payment is PENDING, allow approval.
-    const needForce = order.paymentStatus === 'FAILED';
+    // Require explicit force when payment is not completed
+    const needForce = order.paymentStatus !== 'PAID' && order.paymentStatus !== 'PAID_COD';
     if (needForce) {
       // ask for confirmation via modal
       const ok = await this.modalService.showConfirm(`Order #${order.id} payment status is '${order.paymentStatus}'. Force-approve?`);

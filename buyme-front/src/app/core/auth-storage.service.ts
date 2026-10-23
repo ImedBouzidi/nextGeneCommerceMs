@@ -2,7 +2,10 @@ import { Inject, Injectable } from '@angular/core';
 import { APP_CONFIG } from '../../main';
 
 /** Storage keys that belong to authentication state. */
-export const AUTH_STORAGE_KEYS = ['jwt_token', 'role', 'authToken', 'currentUser'] as const;
+export const AUTH_STORAGE_KEYS = ['jwt_token', 'refresh_token', 'role', 'authToken', 'currentUser'] as const;
+
+const ACCESS_TOKEN_KEY = 'jwt_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
 /** Keys holding per-user state that must not survive a logout. */
 export const SESSION_STORAGE_KEYS = ['cart_items', 'user_discount_percent'] as const;
@@ -84,7 +87,44 @@ export class AuthStorageService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('jwt_token');
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
+  }
+
+  /**
+   * Returns the Keycloak refresh token when it is present, unexpired and issued
+   * by the configured realm. The access token only lives five minutes; this one
+   * is what lets the interceptor recover the session without a new login.
+   */
+  getRefreshToken(): string | null {
+    const token = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!token) return null;
+
+    const decoded = AuthStorageService.decode(token);
+    if (!decoded) {
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      return null;
+    }
+
+    if (decoded.exp && decoded.exp * 1000 <= Date.now()) {
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      return null;
+    }
+
+    if (this.expectedRealm) {
+      const tokenRealm = AuthStorageService.realmOf(decoded.iss);
+      if (!tokenRealm || tokenRealm !== this.expectedRealm) {
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        return null;
+      }
+    }
+
+    if (this.strictIssuer && this.expectedIssuer &&
+        AuthStorageService.normalizeIssuer(decoded.iss) !== this.expectedIssuer) {
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      return null;
+    }
+
+    return token;
   }
 
   getRoles(): string[] {
@@ -104,12 +144,15 @@ export class AuthStorageService {
     const decoded = AuthStorageService.decode(token);
     if (!decoded) {
       // Not a JWT at all — malformed/foreign value sitting in the token slot.
-      this.clearAllTokens();
+      // Keep the refresh token: it may still be usable to recover the session.
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
       return null;
     }
 
     if (decoded.exp && decoded.exp * 1000 <= Date.now()) {
-      this.clearAllTokens();
+      // Only the access token expired. Keep the refresh token so the interceptor
+      // can silently obtain a new one instead of forcing a new login.
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
       return null;
     }
 
@@ -174,9 +217,24 @@ export class AuthStorageService {
    * Replaces any existing session with the newly issued one. Purging first
    * guarantees no token from a previous realm survives the login.
    */
-  setSession(token: string, roles: string[] | null): void {
+  setSession(token: string, roles: string[] | null, refreshToken: string | null = null): void {
     this.clearAllTokens();
-    localStorage.setItem('jwt_token', token);
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
     localStorage.setItem('role', (roles || []).join(','));
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
+  }
+
+  /**
+   * Stores a freshly refreshed access token without touching roles or the rest
+   * of the session. Keycloak may rotate the refresh token; when it does, the new
+   * one replaces the stored value.
+   */
+  updateAccessToken(token: string, refreshToken?: string | null): void {
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
   }
 }

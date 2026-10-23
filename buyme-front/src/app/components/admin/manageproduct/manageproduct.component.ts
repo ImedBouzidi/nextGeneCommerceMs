@@ -13,6 +13,9 @@ import { productImageBaseUrl, productImageUrl, useImageFallback } from '../../..
 
 type AlertType = 'success' | 'error' | 'info';
 
+/** Must stay in sync with catalogue-service's spring.servlet.multipart.max-file-size. */
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
 interface Category {
   id: number | null;
   name: string;
@@ -310,9 +313,24 @@ saveCategory() {
     const input = event.target as HTMLInputElement;
     if (!input.files) return;
 
-    this.selectedProductFiles = Array.from(input.files);
+    const files = Array.from(input.files);
+    const accepted = files.filter(file => file.size <= MAX_IMAGE_BYTES);
+    const tooLarge = files.filter(file => file.size > MAX_IMAGE_BYTES);
+
+    if (tooLarge.length > 0) {
+      const maxMb = Math.round(MAX_IMAGE_BYTES / (1024 * 1024));
+      this.displayAlert(
+        `These images exceed the ${maxMb}MB limit and were not added: ${tooLarge.map(f => f.name).join(', ')}`,
+        'error'
+      );
+      // Clear the input too, otherwise the rejected files stay selected and the
+      // next change event may not fire for the same selection.
+      input.value = '';
+    }
+
+    this.selectedProductFiles = accepted;
     this.productImagePreviews = [];
-    this.selectedProductFiles.forEach(file => {
+    accepted.forEach(file => {
       const reader = new FileReader();
       reader.onload = () => this.productImagePreviews.push(reader.result as string);
       reader.readAsDataURL(file);
@@ -361,6 +379,7 @@ saveCategory() {
         return;
       }
       console.error('Product operation failed:', err);
+      this.displayAlert('Error saving product: ' + this.uploadErrorMessage(err), 'error');
       // Modal stays open so user can retry
     },
   });
@@ -517,9 +536,19 @@ private buildProductUpdatePayload(): any {
     }, 3000);
   }
 
+  private uploadErrorMessage(err: any): string {
+    const body = err?.error;
+    const bodyText = typeof body === 'string' ? body : JSON.stringify(body ?? '');
+    if (err?.status === 413 || /maximum upload size|too large/i.test(bodyText)) {
+      return `The selected images are too large. Maximum ${Math.round(MAX_IMAGE_BYTES / (1024 * 1024))}MB per image.`;
+    }
+    return this.extractErrorMessage(err);
+  }
+
   private extractErrorMessage(err: any): string {
     if (err?.error) {
       if (typeof err.error === 'string') return err.error;
+      if (err.error.httpErrorMessage) return err.error.httpErrorMessage;
       if (err.error.message) return err.error.message;
       if (typeof err.error === 'object') return JSON.stringify(err.error);
     }

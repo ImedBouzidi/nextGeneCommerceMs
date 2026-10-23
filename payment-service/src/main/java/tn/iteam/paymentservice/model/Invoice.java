@@ -18,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Invoice {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private UUID accountId; // customer account ID in Kill Bill
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)

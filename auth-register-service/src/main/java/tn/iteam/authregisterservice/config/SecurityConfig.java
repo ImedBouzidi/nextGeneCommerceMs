@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/refresh").permitAll()
                         .requestMatchers("/api/auth/me").permitAll() // Allow for token validation testing
 
                         // Swagger

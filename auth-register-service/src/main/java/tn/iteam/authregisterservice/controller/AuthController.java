@@ -113,6 +113,23 @@ public class AuthController {
     }
 
 
+    @PostMapping("/refresh")
+    @Operation(
+            summary = "Refresh an expired session",
+            description = "Exchanges a Keycloak refresh token for a new access token"
+    )
+    public ResponseEntity<LoginResponseDto> refresh(@RequestBody(required = false) RefreshTokenRequestDto requestDto) {
+        LoginResponseDto response = authService.refresh(
+                requestDto != null ? requestDto.getRefreshToken() : null);
+
+        if (response.getToken() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+
     @GetMapping("/me")
     @Operation(
             summary = "Get current authenticated user",

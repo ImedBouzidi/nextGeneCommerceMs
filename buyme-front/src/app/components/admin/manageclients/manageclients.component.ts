@@ -108,8 +108,12 @@ export class ManageClientsComponent implements OnInit, OnDestroy {
 
     this.subs.push(
       this.segmentationService.getCustomerDetail(customer.customer_id).subscribe({
-        next: (detail: CustomerDetail) => {
-          this.customerDetail = detail;
+        next: (detail: CustomerDetail | null) => {
+          if (!detail?.customer) {
+            this.detailError = 'Customer details are unavailable';
+          } else {
+            this.customerDetail = detail;
+          }
           this.detailLoading = false;
         },
         error: (err) => {

@@ -158,18 +158,20 @@
         <div class="mc-drawer-loading"><div class="spinner"></div><p>Loading client data…</p></div>
       } @else if (detailError) {
         <div class="mc-drawer-error"><i class="fa-solid fa-triangle-exclamation"></i><p>{{ detailError }}</p></div>
-      } @else if (customerDetail) {
+      } @else {
+        @if (customerDetail; as detail) {
+        @if (detail.customer; as customer) {
         <div class="mc-drawer-content">
           <!-- Profile -->
           <div class="mc-detail-section">
             <h3><i class="fa-solid fa-user-circle"></i> Profile</h3>
             <dl class="mc-detail-grid">
-              <dt>Customer ID</dt><dd>{{ customerDetail.customer.customer_id }}</dd>
-              <dt>Segment</dt><dd><span class="mc-segment-badge" [class]="getSegmentClass('')">{{ getSegmentLabel(customerDetail.customer) }}</span></dd>
-              <dt>Engagement Score</dt><dd>{{ (customerDetail.customer.engagement_score * 100).toFixed(1) }}%</dd>
-              <dt>Buying Score</dt><dd>{{ (customerDetail.customer.buying_score * 100).toFixed(1) }}%</dd>
-              <dt>Rating Score</dt><dd>{{ (customerDetail.customer.rating_score * 100).toFixed(1) }}%</dd>
-              <dt>Interaction Score</dt><dd>{{ (customerDetail.customer.interaction_score * 100).toFixed(1) }}%</dd>
+              <dt>Customer ID</dt><dd>{{ customer.customer_id }}</dd>
+              <dt>Segment</dt><dd><span class="mc-segment-badge" [class]="getSegmentClass('')">{{ getSegmentLabel(customer) }}</span></dd>
+              <dt>Engagement Score</dt><dd>{{ (customer.engagement_score * 100).toFixed(1) }}%</dd>
+              <dt>Buying Score</dt><dd>{{ (customer.buying_score * 100).toFixed(1) }}%</dd>
+              <dt>Rating Score</dt><dd>{{ (customer.rating_score * 100).toFixed(1) }}%</dd>
+              <dt>Interaction Score</dt><dd>{{ (customer.interaction_score * 100).toFixed(1) }}%</dd>
             </dl>
           </div>
 
@@ -177,19 +179,19 @@
           <div class="mc-detail-section">
             <h3><i class="fa-solid fa-chart-line"></i> RFM Metrics</h3>
             <dl class="mc-detail-grid">
-              <dt>Recency</dt><dd>{{ customerDetail.customer.recency }} days since last order</dd>
-              <dt>Frequency</dt><dd>{{ formatNumber(customerDetail.customer.frequency) }} orders</dd>
-              <dt>Monetary</dt><dd>{{ formatCurrency(customerDetail.customer.monetary) }}</dd>
-              <dt>Avg Order Value</dt><dd>{{ formatCurrency(customerDetail.customer.monetary / (customerDetail.customer.frequency || 1)) }}</dd>
+              <dt>Recency</dt><dd>{{ customer.recency }} days since last order</dd>
+              <dt>Frequency</dt><dd>{{ formatNumber(customer.frequency) }} orders</dd>
+              <dt>Monetary</dt><dd>{{ formatCurrency(customer.monetary) }}</dd>
+              <dt>Avg Order Value</dt><dd>{{ formatCurrency(customer.monetary / (customer.frequency || 1)) }}</dd>
             </dl>
           </div>
 
           <!-- Orders -->
           <div class="mc-detail-section">
-            <h3><i class="fa-solid fa-receipt"></i> Orders ({{ customerDetail.orders.length || 0 }})</h3>
-            @if (customerDetail.orders && customerDetail.orders.length > 0) {
+            <h3><i class="fa-solid fa-receipt"></i> Orders ({{ detail.orders.length || 0 }})</h3>
+            @if (detail.orders && detail.orders.length > 0) {
               <div class="mc-orders-list">
-                @for (order of customerDetail.orders.slice(0, 10); track order.order_id || order.id) {
+                @for (order of detail.orders.slice(0, 10); track order.order_id || order.id) {
                   <div class="mc-order-item">
                     <span class="mc-order-id">#{{ order.order_id || order.id }}</span>
                     <span class="mc-order-date">{{ order.order_date || order.orderDate | date:'mediumDate' }}</span>
@@ -197,8 +199,8 @@
                     <span class="mc-order-amount">{{ formatCurrency(order.amount || order.total || 0) }}</span>
                   </div>
                 }
-                @if (customerDetail.orders.length > 10) {
-                  <p class="mc-more-link">+ {{ customerDetail.orders.length - 10 }} more orders</p>
+                @if (detail.orders.length > 10) {
+                  <p class="mc-more-link">+ {{ detail.orders.length - 10 }} more orders</p>
                 }
               </div>
             } @else {
@@ -208,10 +210,10 @@
 
           <!-- Ratings -->
           <div class="mc-detail-section">
-            <h3><i class="fa-solid fa-star"></i> Ratings ({{ customerDetail.ratings.length || 0 }})</h3>
-            @if (customerDetail.ratings && customerDetail.ratings.length > 0) {
+            <h3><i class="fa-solid fa-star"></i> Ratings ({{ detail.ratings.length || 0 }})</h3>
+            @if (detail.ratings && detail.ratings.length > 0) {
               <div class="mc-ratings-list">
-                @for (rating of customerDetail.ratings.slice(0, 5); track rating.rating_id || rating.id) {
+                @for (rating of detail.ratings.slice(0, 5); track rating.rating_id || rating.id) {
                   <div class="mc-rating-item">
                     <div class="mc-rating-stars">{{ '★'.repeat(rating.rating || 0) }}{{ '☆'.repeat(5 - (rating.rating || 0)) }}</div>
                     <p class="mc-rating-comment">{{ rating.comment || rating.review || 'No comment' }}</p>
@@ -226,28 +228,28 @@
 
           <!-- Interactions -->
           <div class="mc-detail-section">
-            <h3><i class="fa-solid fa-mouse-pointer"></i> Interactions ({{ customerDetail.interactions.length || 0 }})</h3>
-            @if (customerDetail.interactions && customerDetail.interactions.length > 0) {
+            <h3><i class="fa-solid fa-mouse-pointer"></i> Interactions ({{ detail.interactions.length || 0 }})</h3>
+            @if (detail.interactions && detail.interactions.length > 0) {
               <div class="mc-interactions-summary">
                 <div class="mc-interaction-stat">
                   <span class="mc-interaction-label">Views</span>
-                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_views) }}</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customer.total_views) }}</span>
                 </div>
                 <div class="mc-interaction-stat">
                   <span class="mc-interaction-label">Clicks</span>
-                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_clicks) }}</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customer.total_clicks) }}</span>
                 </div>
                 <div class="mc-interaction-stat">
                   <span class="mc-interaction-label">Cart Adds</span>
-                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_cart_adds) }}</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customer.total_cart_adds) }}</span>
                 </div>
                 <div class="mc-interaction-stat">
                   <span class="mc-interaction-label">Wishlist</span>
-                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.total_wishlist) }}</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customer.total_wishlist) }}</span>
                 </div>
                 <div class="mc-interaction-stat">
                   <span class="mc-interaction-label">Avg Session</span>
-                  <span class="mc-interaction-value">{{ formatNumber(customerDetail.customer.avg_session_duration) }}s</span>
+                  <span class="mc-interaction-value">{{ formatNumber(customer.avg_session_duration) }}s</span>
                 </div>
               </div>
             } @else {
@@ -277,6 +279,8 @@
             </div>
           </div>
         </div>
+        }
+        }
       }
     </aside>
 

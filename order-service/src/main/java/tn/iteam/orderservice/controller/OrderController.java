@@ -60,9 +60,10 @@ public class OrderController {
     @PutMapping("/{orderId}/approve")
     public ResponseEntity<Order> approveOrder(
             @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long orderId) {
+            @PathVariable Long orderId,
+            @RequestParam(value = "force", required = false, defaultValue = "false") boolean force) {
 
-        Order approvedOrder = orderService.approveOrder(authHeader, orderId);
+        Order approvedOrder = orderService.approveOrder(authHeader, orderId, force);
         return ResponseEntity.ok(approvedOrder);
     }
 

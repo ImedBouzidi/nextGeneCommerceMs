@@ -105,11 +105,11 @@ export class CustomerSegmentationService {
     );
   }
 
-  getCustomerDetail(customerId: string): Observable<CustomerDetail> {
+  getCustomerDetail(customerId: string): Observable<CustomerDetail | null> {
     return this.http.get<CustomerDetail>(`${this.gatewayUrl}/customer/${customerId}`).pipe(
       catchError((err) => {
         console.error('[CustomerSegmentationService] getCustomerDetail failed', err);
-        return of({ customer: null as any, orders: [], ratings: [], interactions: [] });
+        return of(null);
       })
     );
   }

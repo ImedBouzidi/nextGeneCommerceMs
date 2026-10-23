@@ -5,11 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
@@ -17,6 +20,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.multipart.MultipartFile;
 import tn.iteam.authregisterservice.dto.*;
 import tn.iteam.authregisterservice.exceptions.EmailAlreadyExistsException;
@@ -32,6 +39,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -52,6 +60,7 @@ public class AuthService {
     @Value("${keycloak.credentials.secret}")
     private String clientSecret;
     private final Keycloak keycloakAdminClient;
+    private final RestClient restClient = RestClient.create();
     public AuthService(UserRepository userRepository,
                        RoleRepository roleRepository,
                        FileStorageService fileStorageService,
@@ -158,7 +167,8 @@ public class AuthService {
                     .grantType(OAuth2Constants.PASSWORD)
                     .build();
 
-            String token = keycloak.tokenManager().getAccessTokenString();
+            AccessTokenResponse tokenResponse = keycloak.tokenManager().getAccessToken();
+            String token = tokenResponse != null ? tokenResponse.getToken() : null;
             if (token == null || token.isBlank() || !isJwt(token)) {
                 log.warn("Keycloak returned no usable access token for {}", dto.getEmail());
                 return new LoginResponseDto(null, null, "Invalid credentials or Keycloak error");
@@ -170,6 +180,8 @@ public class AuthService {
             LoginResponseDto response = new LoginResponseDto();
             response.setRoles(user.getRoles().stream().map(Role::getName).toList());
             response.setToken(token);
+            response.setRefreshToken(tokenResponse.getRefreshToken());
+            response.setExpiresIn(tokenResponse.getExpiresIn());
             response.setMessage("Login successful with Keycloak");
 
             return response;
@@ -177,6 +189,59 @@ public class AuthService {
         } catch (Exception e) {
             log.warn("Keycloak login failed for {}: {}", dto.getEmail(), e.getMessage());
             return new LoginResponseDto(null, null, "Invalid credentials or Keycloak error");
+        }
+    }
+
+    /**
+     * Exchanges a Keycloak refresh token for a new access token.
+     *
+     * Access tokens live five minutes by default, which is far shorter than a
+     * typical admin editing session. The browser calls this instead of forcing
+     * the user to sign in again. Keycloak may rotate the refresh token, so the
+     * new one is returned as well.
+     */
+    public LoginResponseDto refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return new LoginResponseDto(null, null, "Missing refresh token");
+        }
+
+        try {
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("grant_type", OAuth2Constants.REFRESH_TOKEN);
+            form.add("client_id", clientId);
+            form.add("client_secret", clientSecret);
+            form.add("refresh_token", refreshToken);
+
+            Map<String, Object> body = restClient.post()
+                    .uri(keycloakUrl + "/realms/" + realm + "/protocol/openid-connect/token")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+
+            Object accessToken = body != null ? body.get("access_token") : null;
+            if (accessToken == null || !isJwt(accessToken.toString())) {
+                log.warn("Keycloak refresh returned no usable access token");
+                return new LoginResponseDto(null, null, "Could not refresh session");
+            }
+
+            Object nextRefreshToken = body.get("refresh_token");
+            Object expiresIn = body.get("expires_in");
+
+            LoginResponseDto response = new LoginResponseDto();
+            response.setToken(accessToken.toString());
+            response.setRefreshToken(nextRefreshToken != null ? nextRefreshToken.toString() : refreshToken);
+            response.setExpiresIn(expiresIn instanceof Number number ? number.longValue() : null);
+            response.setMessage("Session refreshed");
+            return response;
+
+        } catch (RestClientResponseException e) {
+            log.warn("Keycloak refresh failed: HTTP {}", e.getStatusCode().value());
+            return new LoginResponseDto(null, null, "Session expired, please sign in again");
+        } catch (Exception e) {
+            log.warn("Keycloak refresh failed: {}", e.getMessage());
+            return new LoginResponseDto(null, null, "Session expired, please sign in again");
         }
     }
 

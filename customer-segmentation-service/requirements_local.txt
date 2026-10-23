@@ -4,3 +4,4 @@ numpy
 scikit-learn
 kafka-python
 PyYAML
+psycopg2-binary

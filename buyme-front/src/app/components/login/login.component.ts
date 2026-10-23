@@ -52,7 +52,7 @@ onLogin() {
 
         if (isUsable) {
           // setSession purges first, then stores only this realm's token.
-          this.authStorage.setSession(res.token!, res.roles);
+          this.authStorage.setSession(res.token!, res.roles, res.refreshToken ?? null);
           this.message = res.message;
 
           // Normalize role names (remove "ROLE_" prefix if present)

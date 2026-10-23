@@ -312,6 +312,14 @@ public class OrderService {
      */
     @Transactional
     public Order approveOrder(String bearerToken, Long orderId) {
+        return approveOrder(bearerToken, orderId, false);
+    }
+
+    /**
+     * Admin approves an order - only if payment is completed (unless forced)
+     */
+    @Transactional
+    public Order approveOrder(String bearerToken, Long orderId, boolean force) {
         UserDto admin = getCurrentUser();
         if (admin == null) {
             throw new BusinessException("Unauthorized", HttpStatus.UNAUTHORIZED);
@@ -324,13 +332,18 @@ public class OrderService {
                 .orElseThrow(() -> new BusinessException("Order not found: " + orderId, HttpStatus.NOT_FOUND));
 
         // Validate payment is completed
-        if (order.getPaymentStatus() != PaymentStatus.PAID) {
+        if (!force && order.getPaymentStatus() != PaymentStatus.PAID) {
             log.warn("Admin {} attempted to approve order {} without payment. Payment status: {}",
                     admin.getId(), orderId, order.getPaymentStatus());
             throw new BusinessException(
                     "Cannot approve order: Payment not completed. Current payment status: " + order.getPaymentStatus(),
                     HttpStatus.BAD_REQUEST
             );
+        }
+
+        if (force && order.getPaymentStatus() != PaymentStatus.PAID) {
+            log.warn("Admin {} forcing approval of order {} with payment status: {}",
+                    admin.getId(), orderId, order.getPaymentStatus());
         }
 
         // Validate order is in a valid state for approval
